@@ -363,8 +363,13 @@
     {#####################}
     {### END POST BODY ###}
     {#####################}
-
+      <div>
+          {% if not is_index %}
+            {% include 'my-copyright.swig' %}
+          {% endif %}
+      </div>
     {% if theme.wechat_subscriber.enabled and not is_index %}
+     
       <div>
         {% include 'wechat-subscriber.swig' %}
       </div>
@@ -386,7 +391,7 @@
       {% if post.tags and post.tags.length and not is_index %}
         <div class="post-tags">
           {% for tag in post.tags %}
-            <a href="{{ url_for(tag.path) }}" rel="tag"># {{ tag.name }}</a>
+            <a href="{{ url_for(tag.path) }}" <i class="fa fa-tag"></i> {{ tag.name }}</a>
           {% endfor %}
         </div>
       {% endif %}
