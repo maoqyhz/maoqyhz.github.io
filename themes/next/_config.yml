@@ -46,7 +46,8 @@ cache:
 # Then need to rename & redefine they on any other names, otherwise icons from Next will rewrite your custom icons in Hexo.
 favicon:
   small: /images/favicon-16x16-next.png
-  medium: /images/favicon-32x32-next.png
+  # medium: /images/favicon-32x32-next.png
+  medium: /fur.png
   apple_touch_icon: /images/apple-touch-icon-next.png
   safari_pinned_tab: /images/logo.svg
   #android_manifest: /images/manifest.json
@@ -347,7 +348,7 @@ custom_logo:
 # Code Highlight theme
 # Available values: normal | night | night eighties | night blue | night bright
 # https://github.com/chriskempson/tomorrow-theme
-highlight_theme: night
+highlight_theme: normal
 
 # Enable "cheers" for archive page.
 cheers_enabled: true
@@ -375,7 +376,7 @@ sidebar_width:
 # Arial | Tahoma | Helvetica | Times New Roman | Courier New | Verdana | Georgia | Palatino | Garamond | Comic Sans MS | Trebuchet MS
 # ---------------------------------------------------------------
 font:
-  enable: false
+  enable: true
 
   # Uri of fonts host. E.g. //fonts.googleapis.com (Default).
   host:
@@ -408,13 +409,13 @@ font:
   # Fallback to `global` font settings.
   logo:
     external: true
-    family:
-    size:
+    family: Lobster Two
+    size: 24
 
   # Font settings for <code> and code blocks.
   codes:
     external: true
-    family:
+    family: 
     size:
 
 
@@ -491,12 +492,12 @@ changyan:
 # You can get your appid and appkey from https://leancloud.cn
 # more info please open https://valine.js.org
 valine:
-  enable: false
-  appid:  # your leancloud application appid
-  appkey:  # your leancloud application appkey
+  enable: true
+  appid:  vjTQ0OJc6lWYvGleNqbQSmHQ-gzGzoHsz # your leancloud application appid
+  appkey: HLP2PTItwSFEB9cdPx43PODI # your leancloud application appkey
   notify: false # mail notifier , https://github.com/xCss/Valine/wiki
   verify: false # Verification code
-  placeholder: Just go go # comment box placeholder
+  placeholder: Say something to me. # comment box placeholder
   avatar: mm # gravatar style
   guest_info: nick,mail,link # custom comment header
   pageSize: 10 # pagination size
@@ -508,7 +509,7 @@ valine:
 
 # Support for LiveRe comments system.
 # You can get your uid from https://livere.com/insight/myCode (General web site)
-livere_uid: MTAyMC8zNjQxNi8xMjk1MQ==
+# livere_uid: MTAyMC8zNjQxNi8xMjk1MQ==
 
 # Gitment
 # Introduction: https://imsun.net/posts/gitment-introduction/
@@ -530,8 +531,8 @@ gitment:
 # Available value:
 #    button | slide
 # Warning: Baidu Share does not support https.
-baidushare:
- type: slide
+# baidushare:
+#  type: slide
 
 # Share
 # This plugin is more useful in China, make sure you known how to use it.
@@ -632,13 +633,13 @@ rating:
 # Show number of visitors to each article.
 # You can visit https://leancloud.cn get AppID and AppKey.
 leancloud_visitors:
-  enable: false
-  app_id: #<app_id>
-  app_key: #<app_key>
+  enable: true
+  app_id:  vjTQ0OJc6lWYvGleNqbQSmHQ-gzGzoHsz # your leancloud application appid
+  app_key: HLP2PTItwSFEB9cdPx43PODI # your leancloud application appkey
   # Dependencies: https://github.com/theme-next/hexo-leancloud-counter-security
   # If you don't care about security in lc counter and just want to use it directly
-  # (without hexo-leancloud-counter-security plugin), set the `security` to `false`.
-  security: true
+  # (without hexo-leancloutrued-counter-security plugin), set the `security` to `false`.
+  security: false
   betterPerformance: false
 
 # Another tool to show number of visitors to each article.

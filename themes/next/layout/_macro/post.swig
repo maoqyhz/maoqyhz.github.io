@@ -72,6 +72,11 @@
         {% endif %}
 
         <div class="post-meta">
+		  {% if post.top %}
+            <i class="fa fa-thumb-tack"></i>
+            <font color=7D26CD>[置顶]</font>
+            <span class="post-meta-divider">|</span>
+          {% endif %}
           <span class="post-time">
 
             {% set date_diff = date(post.date) != date(post.updated) %}
@@ -214,7 +219,8 @@
                   <i class="fa fa-comment-o"></i>
                 </span>
                 <a href="{{ url_for(post.path) }}#comments" itemprop="discussionUrl">
-                  <span class="post-meta-item-text">{{ __('post.comments_count') + __('symbol.colon') }}</span> <span class="post-comments-count valine-comment-count" data-xid="{{ url_for(post.path) }}" itemprop="commentCount"></span>
+                 {# <span class="post-meta-item-text">{{ __('post.comments_count') + __('symbol.colon') }}</span> #}
+				  <span class="post-comments-count valine-comment-count" data-xid="{{ url_for(post.path) }}" itemprop="commentCount"></span>
                 </a>
               </span>
             {% endif %}
@@ -228,7 +234,7 @@
                  <i class="fa fa-eye"></i>
                </span>
                {% if theme.post_meta.item_text %}
-                 <span class="post-meta-item-text">{{__('post.views') + __('symbol.colon') }}</span>
+                {# <span class="post-meta-item-text">{{__('post.views') + __('symbol.colon') }}</span> #}
                {% endif %}
                  <span class="leancloud-visitors-count"></span>
              </span>
