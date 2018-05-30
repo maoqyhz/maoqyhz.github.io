@@ -21,6 +21,7 @@ Absolutely，博主选择了后者。Hexo的教程网上多了去了，也写的
 
 - 搭建一个Hexo&Next的最小博客系统
 - Next主题美化心得
+- 域名绑定
 - 关于博客图片
 - 备份维护的Tips
 
@@ -70,6 +71,34 @@ github_banner: https://github.com/maoqyhz || Follow me on GitHub
   旧版的next主题使用的是`hexo-wordcount`插件，新版已替换成`hexo-symbols-count-time`
 
 上述的美化配置，均可在Next官方文档和[hexo的next主题个性化教程:打造炫酷网站](https://zhuanlan.zhihu.com/p/28128674)中找到。
+
+
+
+## 域名绑定
+
+github page自带二级域名，同时也支持绑定个人域名。
+
+域名其实分为注册和绑定两部分。
+
+第一，需要去域名服务商哪里购买域名，国内：万网、Dnspod；国外选择余地就更大了，具体的价格可参考[www.domcomp.com](https://www.domcomp.com/)。博主是在namesilo里买的，价格相对比较便宜。
+
+第二，域名绑定。如果是像博主这样在国外服务商买的域名，一般就不使用其域名解析服务（NS）了，可以换成国内的Dnspod。**然后设置别名即可，不需要添加A记录。**
+
+具体操作如下：
+
+1. 更换域名服务商的NS，以namesilo为例。
+
+![](manage.png)
+
+![](change ns.png)
+
+2. 在Dnspod中添加域名和记录。
+
+![](dnspod.png)
+
+3. 在博客源文件`source/`目录下创建一个无文件类型的文件`CNAME`，并添加自己的域名，例如`furur.xyz`。更新部署到github上。
+
+由于NS修改需要时间，过一段时间可以刷新下网页看看。
 
 
 ## 关于博客图片

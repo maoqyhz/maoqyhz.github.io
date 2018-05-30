@@ -97,8 +97,5 @@
   {% include '_third-party/exturl.swig' %}
   {% include '_third-party/bookmark.swig' %}
   {% include '_third-party/copy-code.swig' %}
-  {% if theme.canvas_nest %}
-	<script src="https://cdn.bootcss.com/canvas-nest.js/1.0.1/canvas-nest.min.js"></script>
-  {% endif %}
 </body>
 </html>
