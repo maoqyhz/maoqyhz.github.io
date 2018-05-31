@@ -5,7 +5,7 @@ tags:
     - hexo
     - hexo-next
 categories:
-    - 杂七杂八
+    - 技术圈
 copyright: true
 ---
 
