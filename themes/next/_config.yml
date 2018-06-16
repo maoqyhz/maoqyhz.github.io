@@ -139,9 +139,9 @@ menu_settings:
 
 # Schemes
 # scheme: Muse
-scheme: Mist
+# scheme: Mist
 # scheme: Pisces
-# scheme: Gemini
+scheme: Gemini
 
 
 # ---------------------------------------------------------------
@@ -191,6 +191,7 @@ links_layout: block
 #links_layout: inline
 links:
   Fururur的博客园: http://www.cnblogs.com/Sinte-Beuve
+  区长: http://fucknmb.com
 
 # Sidebar Avatar
 # in theme directory(source/images): /images/avatar.gif
@@ -555,9 +556,9 @@ gitment:
 #           Technorati,Posterous,Tumblr,GoogleBookmarks,Newsvine,
 #           Evernote,Friendfeed,Vkontakte,Odnoklassniki,Mailru
 needmoreshare2:
-  enable: false
+  enable: true
   postbottom:
-    enable: false
+    enable: true
     options:
       iconStyle: box
       boxForm: horizontal

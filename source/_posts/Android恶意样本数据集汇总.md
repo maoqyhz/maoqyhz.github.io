@@ -1,0 +1,129 @@
+---
+title: Android 恶意样本数据集汇总
+date: 2018-06-01 17:08:32
+tags:
+	- Android Malware
+categories:
+	- 技术圈
+copyright: true
+---
+> 硕士论文的研究方向为Android恶意应用分类，因此花了一点时间去搜集Android恶意样本。其中一部分来自过去论文的公开数据集，一部分来自社区或平台的样本。现做一个汇总，标明了样本或数据集的采集时间、样本数量、对于论文以及获取方式。
+
+<!-- more -->
+
+List some android malware datasets in academic research.Some of them are still up to date.
+
+> 1. 我这里有Drebin的数据集，以及2017-10和2018-3月VirusTotal的android恶意样本，超过20GB。VirusTotal的数据集在Google云盘上。需要的可以联系我。
+> 2. 历史的数据集例如Drebin、Genome 等可以联系导师，然后发邮件联系他们获取，一些不再共享的也可以联系一些已经拥有数据集的大学和机构，基本上国内知名的大学都会有这些数据集。
+> 3. VirusTotal的样本可以自己去申请。分为API和恶意文件夹。前者可以等到详细的样本检测报告，后者的话主要是大量的恶意样本。但是VirusTotal样本申请需要填写大量的信息，例如身份、研究的内容、学校和导师的资料等。
+> 4. Contagio样本的密码，直接联系博主本人即可。
+> 5. **所有样本仅可用于学术研究，并且请指出样本来源。**
+
+## [VirusTotal Mobile Apps Samples](https://www.virustotal.com)
+
+> VirusTotal: Analyze suspicious files and URLs to detect types of malware including viruses, worms, and trojans.
+
+**Description:** VirusTotal can also be used through a smartphone app.   VirusTotal is about empowering the Community in order to build tools that will make the Internet a safer place, as such, we like to credit and feature Community-developed goodies that help the antivirus industry in receiving more files in order to have more visibility into threats. Below you can find links to apps that will allow you to interact with VirusTotal making use of your smartphone, note that these are not developed by VirusTotal itself and so we are not responsible for them.
+
+**Sample Volume:** N/A
+
+**Collected Time:** up to date
+
+**HomePage:** https://www.virustotal.com
+
+**Way to get:** 
+
+1. If you need a **small volume** of sample, **login to VirusTotal and download manually**.
+2. If you need a **large volume** of sample, **email to virusTotal for academic requests**. You can choose "access to the Academic API" or "access to a folder of malware"
+
+
+
+## [Contagio Mobile Malware Mini Dump](http://contagiominidump.blogspot.hk/)
+
+**Description:** aka "take a sample, leave a sample"Contagio mobile mini-dump is a part of [contagiodump.blogspot.com](http://contagiodump.blogspot.com/). Contagio mobile mini-dump offers an upload dropbox for you to share your mobile malware samples. You can also download any samples individually or [in one zip](http://4.bp.blogspot.com/-63xjcW3iEa4/Thuf0-wn5tI/AAAAAAAACRg/aWewDxFlTbs/s1600/allmobile.png).
+
+**Sample Volume:** N/A
+
+**Collected Time:** up to date
+
+**HomePage:** http://contagiominidump.blogspot.hk/
+
+**Way to get:** free for download in Contagio  blogs.And you can also download the sample from this  link: http://contagiomobile.deependresearch.org/index.html However, the package need password to decompress, you need to email bloger to get password.
+
+
+
+## [Koodous](https://koodous.com/)
+
+**Description:** Koodous is a collaborative platform that combines the power of online analysis tools with social interactions between the analysts over a vast APKs repository.
+
+**Sample Volume:** N/A
+
+**Collected Time:** up to date
+
+**HomePage:** https://koodous.com/
+
+**Way to get:** register and download manually or use the api.
+
+
+
+## [The Drebin Dataset](https://www.sec.cs.tu-bs.de/~danarp/drebin/index.html)
+**Description:** The dataset contains 5,560 applications from 179 different malware families. The samples have been collected in the period of August 2010 to October 2012 and were made available to us by the MobileSandbox project. 
+
+**Sample Volume:** 5,560 applications from 179 different malware families
+
+**Collected Time:** 2010.8 - 2012.10
+
+**Papers:**
+1. Daniel Arp, Michael Spreitzenbarth, Malte Huebner, Hugo Gascon, and Konrad Rieck "Drebin: Efficient and Explainable Detection of Android Malware in Your Pocket", 21th Annual Network and Distributed System Security Symposium (NDSS), February 2014
+2. Michael Spreitzenbarth, Florian Echtler, Thomas Schreck, Felix C. Freling, Johannes Hoffmann, "MobileSandbox: Looking Deeper into Android Applications", 28th International ACM Symposium on Applied Computing (SAC), March 2013
+
+**HomePage:** https://www.sec.cs.tu-bs.de/~danarp/drebin/index.html
+
+**Way to get:** send email 
+
+
+
+## [Android Malware Genome Project](http://www.malgenomeproject.org/)
+
+> (2015/12/21) Due to limited resources and the situation that students involving in this project have graduated, **we decide to stop the efforts of malware dataset sharing**.
+
+**Description:** In this project, we focus on the Android platform and aim to systematize or characterize existing Android malware. Particularly, with more than one year effort, we have managed to collect more than 1,200 malware samples that cover the majority of existing Android malware families, ranging from their debut in August 2010 to recent ones in October 2011.
+
+**Sample Volume:** more than 1,200
+
+**Collected Time:** 2010.8 - 2011.10
+
+**Papers:**
+
+Yajin Zhou, Xuxian Jiang, [ Dissecting Android Malware: Characterization and Evolution.](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=6234407&tag=1) Proceedings of the 33rd IEEE Symposium on Security and Privacy (Oakland 2012). San Francisco, CA, May 2012
+
+**HomePage:** http://www.malgenomeproject.org/
+
+**Way to get:** ask someone who had already get this dataset. [following universities, research labs and companies](http://www.malgenomeproject.org/policy.html)
+
+
+## [Kharon Malware Dataset](http://kharon.gforge.inria.fr/dataset/)
+
+**Description:** The Kharon dataset is a collection of malware totally reversed and documented. This dataset has been constructed to help us to evaluate our research experiments. Its construction has required a huge amount of work to understand the malicous code, trigger it and then construct the documentation. This dataset is now available for research purpose, we hope it will help you to lead your own experiments.
+
+**Papers:** CIDRE, EPI. [Kharon dataset: Android malware under a microscope.](https://www.usenix.org/system/files/conference/laser2016/laser2016-paper-kiss.pdf) Learning from Authoritative Security Experiment Results (2016): 1.
+
+**Homepage:** [http://kharon.gforge.inria.fr/dataset/](http://kharon.gforge.inria.fr/dataset/)
+
+## [AMD Project](http://amd.arguslab.org)
+
+**Description:** AMD contains 24,553 samples, categorized in 135 varieties among 71 malware families ranging from 2010 to 2016. The dataset provides an up-to-date picture of the current landscape of Android malware, and is publicly shared with the community.
+
+**Sample Volume:** 24,553 samples
+
+**Collected Time:** 2010 to 2016
+
+**Papers**
+Li Y, Jang J, Hu X, et al. [Android malware clustering through malicious payload mining](https://arxiv.org/pdf/1707.04795.pdf)[C]//International Symposium on Research in Attacks, Intrusions, and Defenses. Springer, Cham, 2017: 192-214.
+
+Wei F, Li Y, Roy S, et al. [Deep Ground Truth Analysis of Current Android Malware](http://www.fengguow.com/resources/papers/AMD-DIMVA17.pdf)[C]//International Conference on Detection of Intrusions and Malware, and Vulnerability Assessment. Springer, Cham, 2017: 252-276.
+
+**Homepage**: [http://amd.arguslab.org](http://amd.arguslab.org)
+
+更多有关于Android恶意分类的资料，可访问我的github。项目地址为：**[DroidCC](https://github.com/maoqyhz/DroidCC)**，里面包含了Android恶意检测的工具、最近的参考文献、第三方应用市场等资料。
+

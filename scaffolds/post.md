@@ -2,6 +2,10 @@
 title: {{ title }}
 date: {{ date }}
 tags:
+	- 
 categories:
-copyright: 
+	- 
+copyright: true
 ---
+
+<!-- more -->
