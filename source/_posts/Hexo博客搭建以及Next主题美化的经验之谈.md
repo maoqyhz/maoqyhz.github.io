@@ -5,7 +5,7 @@ tags:
     - hexo
     - hexo-next
 categories:
-    - 技术圈
+    - 技术云云
 copyright: true
 ---
 

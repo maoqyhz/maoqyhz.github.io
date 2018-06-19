@@ -4,7 +4,7 @@ date: 2018-06-01 17:08:32
 tags:
 	- Android Malware
 categories:
-	- 技术圈
+	- 技术云云
 copyright: true
 ---
 > 硕士论文的研究方向为Android恶意应用分类，因此花了一点时间去搜集Android恶意样本。其中一部分来自过去论文的公开数据集，一部分来自社区或平台的样本。现做一个汇总，标明了样本或数据集的采集时间、样本数量、对于论文以及获取方式。
@@ -13,7 +13,7 @@ copyright: true
 
 List some android malware datasets in academic research.Some of them are still up to date.
 
-> 1. 我这里有Drebin的数据集，以及2017-10和2018-3月VirusTotal的android恶意样本，超过20GB。VirusTotal的数据集在Google云盘上。需要的可以联系我。
+> 1. 我这里有Drebin的数据集，以及VirusTotal（2018.3）的android恶意样本，约15GB。VirusTotal的数据集在Google云盘上,Drebin数据集我上传了2560个到OneDrive（由于空间受限）。需要的可联系我本人（分享Google云盘需要提供你的gmail）。
 > 2. 历史的数据集例如Drebin、Genome 等可以联系导师，然后发邮件联系他们获取，一些不再共享的也可以联系一些已经拥有数据集的大学和机构，基本上国内知名的大学都会有这些数据集。
 > 3. VirusTotal的样本可以自己去申请。分为API和恶意文件夹。前者可以等到详细的样本检测报告，后者的话主要是大量的恶意样本。但是VirusTotal样本申请需要填写大量的信息，例如身份、研究的内容、学校和导师的资料等。
 > 4. Contagio样本的密码，直接联系博主本人即可。

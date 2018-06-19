@@ -3,8 +3,9 @@ title: '[译]通往 Java 函数式编程的捷径'
 tags:
   - Java
   - 函数式编程
-categories:
   - 掘金翻译计划
+categories:
+  - 他山之石
 copyright: true
 date: 2018-06-16 14:17:28
 ---

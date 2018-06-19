@@ -1,14 +1,19 @@
 ---
 title: About
 date: 2018-05-05 15:24:39
-comments: false
+comments: true
 ---
+
+<blockquote class="blockquote-center">
+草木有本心，何求美人折。
+</blockquote> 
+
 #### About Me
 
 <blockquote class="blockquote-center">
 - 90后小哥哥
 - CS硕士在读 - 杭州
-- 未来的后端开发者，热爱写博客，希望将所学分享出去
+- 后端开发者，热爱写博客，希望将所学分享出去
 - embrace open source, embrace the future
 </blockquote> 
 
@@ -26,5 +31,5 @@ comments: false
 #### About social
 
 <blockquote class="blockquote-center">
-- 社交ID见站点概览
+- 社交ID见右侧站点概览
 </blockquote> 
