@@ -31,5 +31,5 @@ comments: true
 #### About social
 
 <blockquote class="blockquote-center">
-- 社交ID见右侧站点概览
+- 社交ID见站点概览
 </blockquote> 

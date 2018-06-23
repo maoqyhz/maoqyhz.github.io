@@ -123,6 +123,7 @@ menu:
   categories: /categories/ || th
   tags: /tags/ || tags  
   archives: /archives/ || archive
+  translation: /translation/ || globe
   about: /about/ || user
   #schedule: /schedule/ || calendar
   #sitemap: /sitemap.xml || sitemap
@@ -139,9 +140,9 @@ menu_settings:
 
 # Schemes
 # scheme: Muse
-scheme: Mist
+# scheme: Mist
 # scheme: Pisces
-# scheme: Gemini
+scheme: Gemini
 
 
 # ---------------------------------------------------------------
@@ -203,7 +204,7 @@ toc:
   enable: true
 
   # Automatically add list number to toc.
-  number: true
+  number: false
 
   # If true, all words will placed on next lines if header width longer then sidebar width.
   wrap: false
