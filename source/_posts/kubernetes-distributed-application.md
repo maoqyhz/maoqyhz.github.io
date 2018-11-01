@@ -1,12 +1,12 @@
 ---
 title: '[译]Kubernetes 分布式应用部署和人脸识别 app 实例'
 tags:
-  - 掘金翻译计划
-  - 容器技术
-  - Kubernetes
-  - 分布式
+  - juejin translation
+  - virtualization
+  - kubernetes
+  - distribution
 categories:
-  - 他山之石
+  - technology
 copyright: true
 date: 2018-06-23 10:37:37
 ---

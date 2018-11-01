@@ -1,11 +1,11 @@
 ---
 title: '[译]深度学习中所需的线性代数知识'
 tags:
-  - Deep Learning
-  - AI
-  - 掘金翻译计划
+  - deep learning
+  - math
+  - juejin translation
 categories:
-  - 他山之石
+  - technology
 copyright: true
 date: 2018-06-08 09:33:09
 ---

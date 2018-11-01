@@ -1,9 +1,9 @@
 ---
 title: Git push 时如何避免出现 "Merge branch 'master' of ..."
 tags:
-  - Git
+  - git
 categories:
-  - 解决方案
+  - solution
 copyright: true
 date: 2018-06-18 13:27:17
 ---
