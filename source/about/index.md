@@ -24,6 +24,7 @@ comments: true
 <blockquote class="blockquote-center">
 - 本站基于Hexo搭建，暂部署在Github Pages
 - 技术博客 - 长期更新 - 坚持原创
+- 原博客地址：https://www.cnblogs.com/Sinte-Beuve/
 </blockquote> 
 
 ----

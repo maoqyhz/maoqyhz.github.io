@@ -139,8 +139,8 @@ menu_settings:
 # ---------------------------------------------------------------
 
 # Schemes
-# scheme: Muse
-scheme: Mist
+scheme: Muse
+# scheme: Mist
 # scheme: Pisces
 # scheme: Gemini
 
@@ -560,18 +560,8 @@ needmoreshare2:
   enable: true
   postbottom:
     enable: true
-    options:
-      iconStyle: box
-      boxForm: horizontal
-      position: bottomCenter
-      networks: Weibo,Wechat,Douban,QQZone,Twitter,Facebook
   float:
-    enable: false
-    options:
-      iconStyle: box
-      boxForm: horizontal
-      position: middleRight
-      networks: Weibo,Wechat,Douban,QQZone,Twitter,Facebook
+    enable: true
 
 # Google Webmaster tools verification setting
 # See: https://www.google.com/webmasters/
