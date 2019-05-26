@@ -561,7 +561,7 @@ needmoreshare2:
   postbottom:
     enable: true
   float:
-    enable: true
+    enable: false
 
 # Google Webmaster tools verification setting
 # See: https://www.google.com/webmasters/

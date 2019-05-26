@@ -5,7 +5,7 @@
 # Site
 title: Fururur's Blog
 subtitle:
-description: 不为繁华易素心
+description: 原来你也在这里
 keywords:
 author: Fururur
 language: zh-CN
@@ -79,7 +79,7 @@ pagination_dir: page
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: next
+theme: next-7.1.1
 
 # symbols_count_time:
 #   symbols: true
