@@ -1,36 +1,23 @@
 ---
 title: About
-date: 2018-05-05 15:24:39
+date: 2019-05-27 21:39:43
 comments: true
 ---
 
-<blockquote class="blockquote-center">
-草木有本心，何求美人折。
-</blockquote> 
+我是青于，base杭州，Java工程师，即将入职虹软杭州。佛系开发者，对coding有一定兴趣，爱折腾，可惜都浅尝辄止。喜欢香港的一切，广东歌狂热分子，TVB忠实剧迷。
 
-#### About Me
+2014年写博客至今，先后在CSDN和博客园写过，从16年底到现在博客园站点PV也有近35w了。目前即将硕士毕业，加上博客园的md书写体验不佳，就把博客搬到了Github Pages上用Hexo搭建。其中，域名来自NameSilo，DNS解析和CDN来自Cloudflare，多图的博客用到了aliyun的OSS。
 
-<blockquote class="blockquote-center">
-- 90后小哥哥
-- CS硕士在读 - 杭州
-- 后端开发者，热爱写博客，希望将所学分享出去
-- embrace open source, embrace the future
-</blockquote> 
+个人站点的内容上也就不局限于技术讨论了，有时也有些关于生活和情感的碎碎念。
 
-----
+**Know more about me**
 
-#### About the site
+- <i class="fa fa-envelope" aria-hidden="true"></i> Email: bWFvcXloekBvdXRsb29rLmNvbQ==
+- <i class="fa fa-weibo" aria-hidden="true"></i> [Weibo](https://weibo.com/u/3160001350)
+- <i class="fa fa-instagram" aria-hidden="true"></i> [Instagram](https://www.instagram.com/_fururur)
 
-<blockquote class="blockquote-center">
-- 本站基于Hexo搭建，暂部署在Github Pages
-- 技术博客 - 长期更新 - 坚持原创
-- 原博客地址：https://www.cnblogs.com/Sinte-Beuve/
-</blockquote> 
+**一些推介**
 
-----
+- [<i class="fa fa-link" aria-hidden="true"></i> 我的博客园](https://www.cnblogs.com/Sinte-Beuve/)    
+- [<i class="fa fa-link" aria-hidden="true"></i> 区长](https://fucknmb.com/)     
 
-#### About social
-
-<blockquote class="blockquote-center">
-- 社交ID见站点概览
-</blockquote> 
