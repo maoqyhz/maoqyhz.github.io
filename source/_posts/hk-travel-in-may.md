@@ -4,7 +4,7 @@ tags:
   - Hong Kong
   - travel
 categories:
-  - emotion
+  - life
 copyright: true
 photos:
   - "https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/hk-travel-in-may/ilovehk.jpg"
