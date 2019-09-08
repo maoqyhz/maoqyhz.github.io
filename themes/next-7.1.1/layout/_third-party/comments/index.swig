@@ -3,7 +3,7 @@
 {% elif theme.changyan.enable and theme.changyan.appid and theme.changyan.appkey %}
   {% include 'changyan.swig' %}
 {% elif theme.valine.enable and theme.valine.appid and theme.valine.appkey %}
-  {% include 'valine.swig' %}
+  {% include 'valine.swig' %}		  
 {% endif %}
 
 {% if page.comments %}

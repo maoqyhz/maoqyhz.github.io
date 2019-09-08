@@ -1,9 +1,7 @@
 ---
 title: 国内app的堕落
-tags:
-  - app
 categories:
-  - emotion
+  - 杂谈
 copyright: true
 date: 2019-06-17 16:00:52
 ---

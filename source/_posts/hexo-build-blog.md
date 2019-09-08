@@ -2,10 +2,10 @@
 title: Hexo 博客搭建以及 Next 主题美化的经验之谈
 date: 2018-05-19 14:33:48
 tags: 
-    - hexo
-    - hexo-next
+  - Hexo
+  - Hexo Next 
 categories:
-    - technology
+  - 技术
 copyright: true
 ---
 

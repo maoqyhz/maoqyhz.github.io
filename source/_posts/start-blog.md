@@ -2,7 +2,9 @@
 title: 『风物长宜放眼量』——序
 date: 2018-05-31 21:25:49
 categories:
-	- emotion
+  - 杂谈
+tags:
+  - 序
 copyright: true
 ---
 >  为个人博客作个序。

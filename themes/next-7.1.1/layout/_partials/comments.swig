@@ -14,7 +14,7 @@
     <div class="comments" id="comments">
       <div id="vk_comments"></div>
     </div>
-
+   
   {% elif theme.disqus.enable or (theme.disqusjs.enable and theme.disqusjs.apikey and theme.disqusjs.shortname) %}
     <div class="comments" id="comments">
       <div id="disqus_thread">
@@ -51,7 +51,10 @@
   {% elif theme.gitalk.enable %}
     <div class="comments" id="gitalk-container">
     </div>
-
+  {% elseif theme.utterances.enable %}
+     <div class="comments" id="comments">
+        {% include '../_third-party/comments/utterances.swig' %}
+     </div>
   {% endif %}
 
 {% endif %}

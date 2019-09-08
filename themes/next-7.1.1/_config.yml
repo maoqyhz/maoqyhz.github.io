@@ -225,6 +225,7 @@ links_layout: block
 links:
   Fururur的博客园: http://www.cnblogs.com/Sinte-Beuve
   区长: http://fucknmb.com
+  小琪琪: https://mobius.fun/
 
 # Sidebar Avatar
 avatar:
@@ -247,7 +248,7 @@ toc:
   # If true, all words will placed on next lines if header width longer then sidebar width.
   wrap: false
   # If true, all level of TOC in a post will be displayed, rather than the activated part of it.
-  expand_all: false
+  expand_all: true
   # Maximum heading depth of generated toc. You can set it in one post through `toc_max_depth` in Front Matter.
   max_depth: 6
 
@@ -345,11 +346,11 @@ codeblock:
   border_radius:
   # Add copy button on codeblock
   copy_button:
-    enable: false
+    enable: true
     # Show text copy result
     show_result: false
     # Style: only 'flat' is currently available, leave it blank if you prefer default theme
-    style:
+    style: 
 
 # Wechat Subscriber
 wechat_subscriber:
@@ -375,7 +376,7 @@ reward:
 # Related popular posts
 # Dependencies: https://github.com/tea3/hexo-related-popular-posts
 related_posts:
-  enable: true
+  enable: false
   title: # custom header, leave empty to use the default one
   display_in_home: false
   params:
@@ -418,7 +419,7 @@ custom_logo:
 # Code Highlight theme
 # Available values: normal | night | night eighties | night blue | night bright
 # https://github.com/chriskempson/tomorrow-theme
-highlight_theme: normal
+highlight_theme: night eighties
 
 # Enable "cheers" for archive page.
 cheers: true
@@ -426,12 +427,12 @@ cheers: true
 # TagCloud settings for tags page.
 tagcloud:
   # If true, font size, font color and amount of tags can be customized
-  enable: false
+  enable: true
   # All values below are same as default, change them by yourself
-  min: 12 # min font size in px
-  max: 30 # max font size in px
-  start: "#ccc" # start color (hex, rgba, hsla or color keywords)
-  end: "#111" # end color (hex, rgba, hsla or color keywords)
+  min: 16 # min font size in px 12
+  max: 16 # max font size in px 30 
+  start: "#111" # start color (hex, rgba, hsla or color keywords) #ccc
+  end: "#111" # end color (hex, rgba, hsla or color keywords) #111
   amount: 200 # amount of tags, change it if you have more than 200 tags
 
 
@@ -637,7 +638,7 @@ changyan:
 # You can get your appid and appkey from https://leancloud.cn
 # More info available at https://valine.js.org
 valine:
-  enable: true
+  enable: false
   appid:  vjTQ0OJc6lWYvGleNqbQSmHQ-gzGzoHsz # your leancloud application appid
   appkey: HLP2PTItwSFEB9cdPx43PODI # your leancloud application appkey
   notify: false # mail notifier , https://github.com/xCss/Valine/wiki
@@ -650,6 +651,13 @@ valine:
   visitor: false # leancloud-counter-security is not supported for now. When visitor is set to be true, appid and appkey are recommended to be the same as leancloud_visitors' for counter compatibility. Article reading statistic https://valine.js.org/visitor.html
   comment_count: true # if false, comment count will only be displayed in post page, not in home page
 
+# utterances 
+utterances:
+  enable: true
+  repo: maoqyhz/blog-comments # owner/repo
+  issue_term: pathname # pathname, url, title, og:title [ISSUE NUMBER] or [SPECIFIC TERM]
+  theme: github-light # github-light or github-dark
+  
 # LiveRe comments system
 # You can get your uid from https://livere.com/insight/myCode (General web site)
 #livere_uid: your uid
@@ -684,8 +692,6 @@ gitalk:
   # If you want everyone visiting your site to see a uniform language, you can set a force language value
   # Available values: en, es-ES, fr, ru, zh-CN, zh-TW
   language:
-
-
 # ---------------------------------------------------------------
 # Content Sharing Services
 # See: https://theme-next.org/docs/third-party-services/content-sharing-services
@@ -814,8 +820,8 @@ leancloud_visitors:
   # Dependencies: https://github.com/theme-next/hexo-leancloud-counter-security
   # If you don't care about security in leancloud counter and just want to use it directly
   # (without hexo-leancloud-counter-security plugin), set `security` to `false`.
-  security: true
-  betterPerformance: false
+  security: false
+  betterPerformance: true
 
 # Another tool to show number of visitors to each article.
 # Visit https://console.firebase.google.com/u/0/ to get apiKey and projectId.

@@ -1,9 +1,9 @@
 ---
 title: 硕士这三年
-tags:
-  - 硕士
 categories:
-  - emotion
+  - 杂谈
+tags:
+  - 毕业感悟
 copyright: true
 date: 2019-06-16 22:23:43
 ---

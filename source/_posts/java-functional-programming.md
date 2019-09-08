@@ -2,10 +2,10 @@
 title: '[译]通往 Java 函数式编程的捷径'
 tags:
   - Java
-  - functional programming
-  - juejin translation
+  - Functional Programming
+  - Translation
 categories:
-  - technology
+  - 技术
 copyright: true
 date: 2018-06-16 14:17:28
 ---

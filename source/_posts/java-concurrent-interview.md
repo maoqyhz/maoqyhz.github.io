@@ -1,16 +1,16 @@
 ---
 title: 2019校招-Java多线程面试题总结
 tags:
-  - concurrent
+  - Concurrency Programming
   - Java
-  - interview
+  - 面试
 categories:
-  - technology
+  - 技术
 copyright: true
 date: 2018-09-10 13:54:13
 ---
 
-> 总结了 Java 多线程相关的面试题。
+总结了 Java 多线程相关的面试题。
 
 <!-- more -->
 

@@ -1,17 +1,14 @@
 ---
-title: 献给渣硕的SCI论文求生指南
+title: 献给渣硕的 SCI 论文求生指南
 tags:
-  - academic paper
-  - sci
+  - Paper
 categories:
-  - technology
+  - 技术
 copyright: true
-photos:
-  - "/2018/10/31/how-to-write-sci-paper/banner.jpg"
 date: 2018-10-31 19:51:42
 ---
 
-> 本文旨在描述本人在硕士期间论文发表的过程以及一些经验和 tips，其中可能涉及一些政治不正确的 idea，请读者注意~~~
+本文旨在描述本人在硕士期间论文发表的过程以及一些经验和 tips。
 
 <!-- more -->
 

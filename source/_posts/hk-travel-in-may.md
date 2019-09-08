@@ -2,18 +2,18 @@
 title: 其实寂寞 就如自己一个游HK
 tags:
   - Hong Kong
-  - travel
+  - 旅行
 categories:
-  - life
+  - 杂谈
 copyright: true
-photos:
-  - "https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/hk-travel-in-may/ilovehk.jpg"
 date: 2019-05-14 13:43:12
 ---
 
 只惊惯了 一个人会上瘾
 
 <!-- more -->
+
+![](https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/hk-travel-in-may/ilovehk.jpg)
 
 ## 写在旅行前
 
@@ -115,7 +115,7 @@ hins的法式餐厅，不适合在里面食自己，匆匆打卡就走了。
 
 香港是一个包容性很强的地方，在这里你几乎可以吃到世界上所有的美食，但是如果你想体验一下地道的港式早茶，我还是强烈推荐这里的，好味同人情兼备。走之前，阿姐总问我，呢度D嘢好唔好食并和我告别。
 
-当然，来地道的铺头是东西，最好能有local带着，后者自己会广东话啦，只少要能听懂，相对能减少不少的摩擦。
+当然，来地道的铺头食嘢，最好能有local带着，或者自己会广东话啦，至少要能听懂，相对能减少不少的摩擦。
 
 早茶完后就驱车前往上环了。由于当天是**周日，街道上相对会安静些，很多私人的食肆也会关门。**
 ![](https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/hk-travel-in-may/photo_2013_07_23_62d56293e93916170f82cfb2dcb009fb.jpg?x-oss-process=style/logo "上环")
