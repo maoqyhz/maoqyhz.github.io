@@ -16,18 +16,17 @@ cache:
 # Redefine custom file paths. Introduced in NexT v6.0.2. If commented, will be used default custom file paths.
 # For example, you want to put your custom styles file outside theme directory in root `source/_data`, set `styles: source/_data/styles.styl`
 #custom_file_path:
-  # Default paths: layout/_custom/*
-  #head: source/_data/head.swig
-  #header: source/_data/header.swig
-  #sidebar: source/_data/sidebar.swig
+# Default paths: layout/_custom/*
+#head: source/_data/head.swig
+#header: source/_data/header.swig
+#sidebar: source/_data/sidebar.swig
 
-  # Default path: source/css/_variables/custom.styl
-  #variables: source/_data/variables.styl
-  # Default path: source/css/_mixins/custom.styl
-  #mixins: source/_data/mixins.styl
-  # Default path: source/css/_custom/custom.styl
-  #styles: source/_data/styles.styl
-
+# Default path: source/css/_variables/custom.styl
+#variables: source/_data/variables.styl
+# Default path: source/css/_mixins/custom.styl
+#mixins: source/_data/mixins.styl
+# Default path: source/css/_custom/custom.styl
+#styles: source/_data/styles.styl
 
 # ---------------------------------------------------------------
 # Site Information Settings
@@ -105,7 +104,6 @@ github_banner:
   permalink: https://github.com/maoqyhz
   title: Follow me on GitHub
 
-
 # ---------------------------------------------------------------
 # SEO Settings
 # ---------------------------------------------------------------
@@ -147,7 +145,6 @@ exturl: false
 # Enable baidu push so that the blog will push the url to baidu automatically which is very helpful for SEO.
 baidu_push: false
 
-
 # ---------------------------------------------------------------
 # Menu Settings
 # ---------------------------------------------------------------
@@ -173,17 +170,15 @@ menu_settings:
   icons: true
   badges: false
 
-
 # ---------------------------------------------------------------
 # Scheme Settings
 # ---------------------------------------------------------------
 
 # Schemes
-scheme: Muse
+# scheme: Muse
 #scheme: Mist
-#scheme: Pisces
-#scheme: Gemini
-
+scheme: Pisces
+# scheme: Gemini
 
 # ---------------------------------------------------------------
 # Sidebar Settings
@@ -200,7 +195,7 @@ site_state: true
 # Value after `||` delimeter is the name of FontAwesome icon. If icon (with or without delimeter) is not specified, globe icon will be loaded.
 social:
   GitHub: https://github.com/maoqyhz || github
-  Weibo: https://weibo.com/u/3160001350 || weibo 
+  Weibo: https://weibo.com/u/3160001350 || weibo
   Instagram: https://www.instagram.com/_fururur || instagram
   博客园: http://www.cnblogs.com/Sinte-Beuve || wordpress
   #Google: https://plus.google.com/yourname || google
@@ -223,9 +218,10 @@ links_title: Links
 links_layout: block
 #links_layout: inline
 links:
-  Fururur的博客园: http://www.cnblogs.com/Sinte-Beuve
+  我的博客园: http://www.cnblogs.com/Sinte-Beuve
   区长: http://fucknmb.com
-  小琪琪: https://mobius.fun/
+  面向信仰编程: https://draveness.me/
+  程序猿DD: http://blog.didispace.com/spring-boot-learning-1x/
 
 # Sidebar Avatar
 avatar:
@@ -292,7 +288,6 @@ chat:
   icon: comment # icon in Font Awesome 4, set false to disable icon
   text: Chat # button text, change it as you wish
 
-
 # ---------------------------------------------------------------
 # Post Settings
 # See: https://theme-next.org/docs/theme-settings/posts
@@ -350,7 +345,7 @@ codeblock:
     # Show text copy result
     show_result: false
     # Style: only 'flat' is currently available, leave it blank if you prefer default theme
-    style: 
+    style:
 
 # Wechat Subscriber
 wechat_subscriber:
@@ -360,7 +355,7 @@ wechat_subscriber:
 
 # Reward
 reward_settings:
-    # If true, reward would be displayed in every article by default.
+  # If true, reward would be displayed in every article by default.
   # You can show or hide reward in a specific article throuth `reward: true | false` in Front-matter.
   enable: true
   animation: false
@@ -392,7 +387,6 @@ post_edit:
   enable: false
   url: https://github.com/user-name/repo-name/tree/branch-name/subdirectory-name # Link for view source.
   #url: https://github.com/user-name/repo-name/edit/branch-name/subdirectory-name # Link for fork & edit.
-
 
 # ---------------------------------------------------------------
 # Misc Theme Settings
@@ -430,11 +424,10 @@ tagcloud:
   enable: true
   # All values below are same as default, change them by yourself
   min: 16 # min font size in px 12
-  max: 16 # max font size in px 30 
+  max: 16 # max font size in px 30
   start: "#111" # start color (hex, rgba, hsla or color keywords) #ccc
   end: "#111" # end color (hex, rgba, hsla or color keywords) #111
   amount: 200 # amount of tags, change it if you have more than 200 tags
-
 
 # ---------------------------------------------------------------
 # Font Settings. Introduced in NexT v5.0.1.
@@ -488,8 +481,7 @@ font:
   codes:
     external: true
     family:
-    size:
-
+    size: 12
 
 # ---------------------------------------------------------------
 # Third Party Services Settings
@@ -516,7 +508,6 @@ math:
   mathjax:
     cdn: //cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML
     #cdn: //cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML
-
     # See: https://mhchem.github.io/MathJax-mhchem/
     #mhchem: //cdn.jsdelivr.net/npm/mathjax-mhchem@3
     #mhchem: //cdnjs.cloudflare.com/ajax/libs/mathjax-mhchem/3.3.0
@@ -601,7 +592,6 @@ calendar:
   singleEvents: true
   maxResults: 250
 
-
 # ---------------------------------------------------------------
 # Comments and Widgets
 # See: https://theme-next.org/docs/third-party-services/comments-and-widgets
@@ -639,7 +629,7 @@ changyan:
 # More info available at https://valine.js.org
 valine:
   enable: false
-  appid:  vjTQ0OJc6lWYvGleNqbQSmHQ-gzGzoHsz # your leancloud application appid
+  appid: vjTQ0OJc6lWYvGleNqbQSmHQ-gzGzoHsz # your leancloud application appid
   appkey: HLP2PTItwSFEB9cdPx43PODI # your leancloud application appkey
   notify: false # mail notifier , https://github.com/xCss/Valine/wiki
   verify: false # Verification code
@@ -651,13 +641,13 @@ valine:
   visitor: false # leancloud-counter-security is not supported for now. When visitor is set to be true, appid and appkey are recommended to be the same as leancloud_visitors' for counter compatibility. Article reading statistic https://valine.js.org/visitor.html
   comment_count: true # if false, comment count will only be displayed in post page, not in home page
 
-# utterances 
+# utterances
 utterances:
   enable: true
   repo: maoqyhz/blog-comments # owner/repo
   issue_term: pathname # pathname, url, title, og:title [ISSUE NUMBER] or [SPECIFIC TERM]
   theme: github-light # github-light or github-dark
-  
+
 # LiveRe comments system
 # You can get your uid from https://livere.com/insight/myCode (General web site)
 #livere_uid: your uid
@@ -682,11 +672,11 @@ gitment:
 # Demo: https://gitalk.github.io
 gitalk:
   enable: false
-  github_id:  # Github repo owner
-  repo:  # Repository name to store issues
-  client_id:  # Github Application Client ID
-  client_secret:  # Github Application Client Secret
-  admin_user:  # GitHub repo owner and collaborators, only these guys can initialize github issues
+  github_id: # Github repo owner
+  repo: # Repository name to store issues
+  client_id: # Github Application Client ID
+  client_secret: # Github Application Client Secret
+  admin_user: # GitHub repo owner and collaborators, only these guys can initialize github issues
   distraction_free_mode: true # Facebook-like distraction free mode
   # Gitalk's display language depends on user's browser or system environment
   # If you want everyone visiting your site to see a uniform language, you can set a force language value
@@ -750,7 +740,6 @@ needmoreshare2:
       position: middleRight
       networks: Weibo,Wechat,Douban,QQZone,Twitter,Facebook
 
-
 # ---------------------------------------------------------------
 # Statistics and Analytics
 # See: https://theme-next.org/docs/third-party-services/statistics-and-analytics
@@ -779,43 +768,43 @@ cnzz_siteid: 1273618360
 # ---------------------------------------------------------------
 # Facebook SDK Support
 facebook_sdk:
-  enable:       false
-  app_id:       #<app_id>
-  fb_admin:     #<user_id>
-  like_button:  #true
-  webmaster:    #true
+  enable: false
+  app_id: #<app_id>
+  fb_admin: #<user_id>
+  like_button: #true
+  webmaster: #true
 
 # Facebook comments plugin
 # This plugin depends on Facebook SDK.
 # If facebook_sdk.enable is false, Facebook comments plugin is unavailable.
 facebook_comments_plugin:
-  enable:       false
-  num_of_posts: 10    # min posts num is 1
-  width:        100%  # default width is 550px
-  scheme:       light # default scheme is light (light or dark)
+  enable: false
+  num_of_posts: 10 # min posts num is 1
+  width: 100% # default width is 550px
+  scheme: light # default scheme is light (light or dark)
 
 # VKontakte API Support
 # To get your AppID visit https://vk.com/editapp?act=create
 vkontakte_api:
-  enable:       false
-  app_id:       #<app_id>
-  like:         true
-  comments:     true
+  enable: false
+  app_id: #<app_id>
+  like: true
+  comments: true
   num_of_posts: 10
 
 # Star rating support to each article.
 # To get your ID visit https://widgetpack.com
 rating:
   enable: false
-  id:     #<app_id>
-  color:  fc6423
+  id: #<app_id>
+  color: fc6423
 # ---------------------------------------------------------------
 
 # Show number of visitors to each article.
 # You can visit https://leancloud.cn to get AppID and AppKey.
 leancloud_visitors:
   enable: true
-  app_id:  vjTQ0OJc6lWYvGleNqbQSmHQ-gzGzoHsz # your leancloud application appid
+  app_id: vjTQ0OJc6lWYvGleNqbQSmHQ-gzGzoHsz # your leancloud application appid
   app_key: HLP2PTItwSFEB9cdPx43PODI # your leancloud application appkey
   # Dependencies: https://github.com/theme-next/hexo-leancloud-counter-security
   # If you don't care about security in leancloud counter and just want to use it directly
@@ -850,7 +839,6 @@ busuanzi_count:
 # Tencent MTA ID
 #tencent_mta:
 
-
 # ---------------------------------------------------------------
 # Search Services
 # See: https://theme-next.org/docs/third-party-services/search-services
@@ -883,7 +871,6 @@ local_search:
 # Swiftype Search API Key
 #swiftype_key:
 
-
 # ---------------------------------------------------------------
 # Chat Services
 # See: https://theme-next.org/docs/third-party-services/chat-services
@@ -904,7 +891,6 @@ chatra:
 tidio:
   enable: false
   key: # Public Key, get it from Dashboard, See: https://www.tidiochat.com/panel/settings/developer
-
 
 # ---------------------------------------------------------------
 # Tags Settings
@@ -953,7 +939,6 @@ mermaid:
   theme: forest
   cdn: //cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js
   #cdn: //cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0/mermaid.min.js
-
 
 # ---------------------------------------------------------------
 # Animation Settings
@@ -1030,7 +1015,6 @@ canvas_ribbon:
   size: 300
   alpha: 0.6
   zIndex: -1
-
 
 #! ---------------------------------------------------------------
 #! DO NOT EDIT THE FOLLOWING SETTINGS
@@ -1164,7 +1148,7 @@ vendors:
   # needmoreshare2_js: //cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.js
   # needmoreshare2_css: //cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.css
   needmoreshare2_js: //cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.js
-  needmoreshare2_css:  //cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.css
+  needmoreshare2_css: //cdn.jsdelivr.net/gh/theme-next/theme-next-needmoreshare2@1/needsharebutton.min.css
 
   # Internal version: 1.0.0
   # See: https://github.com/theme-next/theme-next-bookmark
