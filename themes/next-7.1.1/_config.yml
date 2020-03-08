@@ -746,7 +746,7 @@ needmoreshare2:
 # ---------------------------------------------------------------
 
 # Baidu Analytics ID
-#baidu_analytics:
+baidu_analytics: 7889dcbf75b5eb88d87b678f31d5e900
 
 # Growingio Analytics ID
 # Copyright 2015-2018 GrowingIO, Inc. More info available at https://www.growingio.com
@@ -758,7 +758,7 @@ needmoreshare2:
 #  localhost_ignored: true
 
 # CNZZ count
-cnzz_siteid: 1273618360
+# cnzz_siteid: 1273618360
 
 # Application Insights
 # See: https://azure.microsoft.com/en-us/services/application-insights
