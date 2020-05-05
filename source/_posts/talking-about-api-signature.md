@@ -44,11 +44,10 @@ if (!Strings.isNullOrEmpty(token)) {
 API 签名的方式较前一种要复杂的多，但是可解决的安全问题也更多：
 
 - 可校验请求者的合法性。
-
 - 可以校验参数的完整性和是否被篡改。
 - 可以防止重放攻击。
 
-**part1：请求端加密 **
+**part1：请求端加密**
 
 API 使用者会获取到服务器颁发的 ak 和 sk 两个秘钥，ak 为公钥，sk 为私钥。
 
@@ -63,17 +62,17 @@ API 使用者会获取到服务器颁发的 ak 和 sk 两个秘钥，ak 为公�
 GET:
 strToSign = uri + "\n" + k1=v1Z&k2=v2&k3=v3
 POST:
-strToSign = uri + "\n" + k1=v1Z&k2=v2&k3=v3 + "\n" + base64(md5(json_body))
+strToSign = uri + "\n" + k1=v1&k2=v2&k3=v3 + "\n" + base64(md5(json_body))
 ```
 
-3. 使用 HmacSHA256 算法，传入 sk 进行签名计算，`sign = HmacSHA256(K,strToSign)`。
+3. 使用 HmacSHA256 算法，传入 sk 进行签名计算，`sign = HmacSHA256(K,strToSign)`，其中`K = sk`。
 4. 组装 HTTP 请求，将 `X-Ca-Key=ak,X-Ca-Signature=sign` 添加到 HTTP Header 中进行请求。
 
 一个简单实例如下图所示：
 
 ![image](https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/talking-about-api-signature/697102-20191224200438391-700977733.png?x-oss-process=style/logo)
 
-**part2：服务端解密 **
+**part2：服务端解密**
 
 同样的，服务端获取到请求的 ak 后，查询出对应的 sk，使用相同的规则进行签名计算，计算出的 sign 和传入的 sign 比对，就能够知道参数是否被篡改。
 
@@ -98,7 +97,7 @@ strToSign = uri + "\n" + k1=v1Z&k2=v2&k3=v3 + "\n" + base64(md5(json_body))
 
 将 timestamp 和 nonce 写入 HTTP Header 中。
 
-**part2：服务端校验 **
+**part2：服务端校验**
 
 1. 数据库查询请求带上的 nonce 是否存在（推荐使用Redis，自带TTL功能）。
 2. 如果不存在，且请求时间有效则为合法请求，同时将 nonce 写入，并记录时间；如果不存在，且请求时间超出规定时限，判断为恶意请求。
