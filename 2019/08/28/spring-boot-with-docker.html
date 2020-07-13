@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/fur.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"furur.xyz","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="使用 Docker 部署一个简单的 Spring Boot 数据库项目。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Windows Docker 部署 Spring Boot 项目">
+<meta property="og:url" content="https://furur.xyz/2019/08/28/spring-boot-with-docker.html">
+<meta property="og:site_name" content="Fururur.">
+<meta property="og:description" content="使用 Docker 部署一个简单的 Spring Boot 数据库项目。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566891262146.png">
+<meta property="og:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566893567141.png">
+<meta property="og:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566893744915.png">
+<meta property="og:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566898104800.png">
+<meta property="og:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566898348067.png">
+<meta property="og:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566901917949.png">
+<meta property="og:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566902052318.png">
+<meta property="og:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566902991835.png">
+<meta property="og:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566956922463.png">
+<meta property="article:published_time" content="2019-08-28T14:32:08.000Z">
+<meta property="article:modified_time" content="2020-07-13T08:27:07.499Z">
+<meta property="article:author" content="Fururur">
+<meta property="article:tag" content="Docker">
+<meta property="article:tag" content="Spring Boot">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566891262146.png">
+
+<link rel="canonical" href="https://furur.xyz/2019/08/28/spring-boot-with-docker.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Windows Docker 部署 Spring Boot 项目 | Fururur.</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?7889dcbf75b5eb88d87b678f31d5e900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Fururur.</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/maoqyhz" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://furur.xyz/2019/08/28/spring-boot-with-docker.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Fururur">
+      <meta itemprop="description" content="原来你也在这里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Fururur.">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Windows Docker 部署 Spring Boot 项目
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-08-28 22:32:08" itemprop="dateCreated datePublished" datetime="2019-08-28T22:32:08+08:00">2019-08-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-13 16:27:07" itemprop="dateModified" datetime="2020-07-13T16:27:07+08:00">2020-07-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>使用 Docker 部署一个简单的 Spring Boot 数据库项目。</p>
+<a id="more"></a>
+
+<p>最近容器化技术 hin 流行啊，所以开始折腾一下呗。试用了下，有的时候的确比虚拟机要方便。其实起初是要用 Redis，但是 Windows 安装不方便，于是就看了下 Docker，基本开箱即用，Docker Hub 上 pull 一个 Redis 官方镜像就可以了。刚好最近在学 Spring Cloud 微服务，也就尝试下 Docker 部署 Spring Boot 项目。</p>
+<p>内容上，本文主要是对 Spring Boot 官方文档的一个补充，英语不错的可以直接浏览参考文献 6-7。</p>
+<p>Docker 的基本概念和用法，这里就详细展开了，可以看参考文献 1-3。</p>
+<h2 id="Docker-Configuration"><a href="#Docker-Configuration" class="headerlink" title="Docker Configuration"></a>Docker Configuration</h2><p>Docker 一般是安装在 Linux 系统中的，但是目前 Windows 也能使用，下载安装后开箱即用。额外需要配置的是：</p>
+<ol>
+<li><p>暴露 TCP 端口，可以在 IDEA 的 Docker 插件中连接使用。</p>
+<p><img src="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566891262146.png" alt="1566891262146"></p>
+</li>
+<li><p>替换官方的 Docker 仓库，使用阿里云镜像加速。在 <code>Daemon</code> 中可进行配置。</p>
+</li>
+</ol>
+<h3 id="Config-IDEA-Plugin"><a href="#Config-IDEA-Plugin" class="headerlink" title="Config IDEA Plugin"></a>Config IDEA Plugin</h3><p>Docker 本身是没有 GUI 界面的，所以所有的维护管理都必须使用命令行，比较麻烦，而 IDEA 给我们提供了一个简单的 Docker 插件，用于管理 Image 和 Container。</p>
+<p><img src="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566893567141.png" alt="配置docker插件"></p>
+<p>在设置中直接搜索 docker，添加一个 Docker Engine，配置 URL，稍等下面提示连接成功后，就可以了。如果连接失败了，可以<strong>检查下 TCP 的 2375 端口是否暴露</strong>了。</p>
+<p><img src="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566893744915.png" alt="插件dashboard"></p>
+<p>然后在底部，就能看到 Docker 的 tab了。里面的信息和命令行中看到的一致。基本的创建、删除、端口映射等操作都能在上面进行。</p>
+<p>那么 Docker 相关的配置就完成了。</p>
+<h2 id="Create-Spring-Boot-Project"><a href="#Create-Spring-Boot-Project" class="headerlink" title="Create Spring Boot Project"></a>Create Spring Boot Project</h2><p>这里用来演示的是一个 Spring Boot 的数据库项目。跟之前一样，配置一些基本内容就可以了。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!--pom.xml--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.example<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-docker<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">version</span>&gt;</span>1.0.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">name</span>&gt;</span>spring-docker<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">java.version</span>&gt;</span>1.8<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">skipTests</span>&gt;</span>true<span class="tag">&lt;/<span class="name">skipTests</span>&gt;</span>		</span><br><span class="line">  <span class="tag">&lt;<span class="name">druid-spring-boot-starter.version</span>&gt;</span>1.1.10<span class="tag">&lt;/<span class="name">druid-spring-boot-starter.version</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">dockerfile-maven-plugin.version</span>&gt;</span>1.4.10<span class="tag">&lt;/<span class="name">dockerfile-maven-plugin.version</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">docker.image.prefix</span>&gt;</span>springboot<span class="tag">&lt;/<span class="name">docker.image.prefix</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line">  <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-test<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">scope</span>&gt;</span>test<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-data-jpa<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.alibaba<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>druid-spring-boot-starter<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;druid-spring-boot-starter.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>mysql<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>mysql-connector-java<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">scope</span>&gt;</span>runtime<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># application.yml</span></span><br><span class="line"><span class="comment"># 配置数据库信息</span></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">datasource:</span></span><br><span class="line">    <span class="attr">type:</span> <span class="string">com.alibaba.druid.pool.DruidDataSource</span></span><br><span class="line">    <span class="attr">driver-class-name:</span> <span class="string">com.mysql.cj.jdbc.Driver</span></span><br><span class="line">    <span class="attr">url:</span> <span class="string">jdbc:mysql://ip:port/test?serverTimezone=Hongkong&amp;characterEncoding=utf-8&amp;useSSL=false</span></span><br><span class="line">    <span class="attr">username:</span> </span><br><span class="line">    <span class="attr">password:</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Spring Boot 启动类</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SpringDockerApplication</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> JdbcTemplate jdbcTemplate;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SpringDockerApplication</span><span class="params">(JdbcTemplate jdbcTemplate)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.jdbcTemplate = jdbcTemplate;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@GetMapping</span>(<span class="string">"/"</span>)</span><br><span class="line">    <span class="function"><span class="keyword">public</span> Message <span class="title">index</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        RowMapper&lt;Message&gt; rowMapper= <span class="keyword">new</span> BeanPropertyRowMapper&lt;&gt;(Message<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line">        Message msg = jdbcTemplate.queryForObject(<span class="string">"select * from message where k = ?"</span>, rowMapper,<span class="string">"msg"</span>);</span><br><span class="line">        <span class="keyword">return</span> msg;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SpringApplication.run(SpringDockerApplication<span class="class">.<span class="keyword">class</span>, <span class="title">args</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>本地访问，能成功运行就说明，Spring Boot 已经配置完成了。下面就是容器化的操作了。</p>
+<h2 id="Containerize-It"><a href="#Containerize-It" class="headerlink" title="Containerize It"></a>Containerize It</h2><p>容器化其实就是创建 Docker 镜像的过程，需要把 jar 包封装进去。具体有两种方式：</p>
+<ol>
+<li>创建 Dockerfile，手动执行 build 和 run。</li>
+<li>使用 dockerfile-maven-plugin 插件。</li>
+</ol>
+<h3 id="Use-Dockerfile"><a href="#Use-Dockerfile" class="headerlink" title="Use Dockerfile"></a>Use Dockerfile</h3><p>首先，在 <code>src/main</code> 下创建 <code>docker</code> 文件夹，并创建一个 Dockerfile，内容如下：</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">FROM</span> openjdk:<span class="number">8</span>-jdk-alpine</span><br><span class="line"><span class="keyword">VOLUME</span><span class="bash"> /tmp</span></span><br><span class="line"><span class="keyword">COPY</span><span class="bash"> spring-docker-1.0.0.jar app.jar</span></span><br><span class="line"><span class="keyword">ENTRYPOINT</span><span class="bash"> [<span class="string">"java"</span>,<span class="string">"-Djava.security.egd=file:/dev/./urandom"</span>,<span class="string">"-jar"</span>,<span class="string">"/app.jar"</span>]</span></span><br></pre></td></tr></table></figure>
+
+<p>假设大家对 Dockerfile 有一定的了解，解释一下上面的内容，</p>
+<ul>
+<li>FROM…，表示使用 <code>openjdk</code> 作为基本镜像，标签为：8-jdk-alpine，意思 jdk 版本为 1.8，精简版。</li>
+<li>VOLUME…，创建一个 <code>VOLUME</code> 指向 <code>/tmp</code> 的内容。因为这是 Spring Boot 应用程序默认为 Tomcat 创建工作目录的地方。效果是在 <code>/ var / lib / docker</code> 下的主机上创建一个临时文件，并将其链接到 <code>/tmp</code> 下的容器。</li>
+<li>COPY…，把项目中的 jar 文件复制过去，并重命名为 <code>app.jar</code>。</li>
+<li>ENTRYPOINT…，执行 <code>java -jar</code> 启动项目。<code>java.security.egd=file:/dev/./urandom</code> 的目的是为了缩短 Tomcat 启动的时间。</li>
+</ul>
+<p>接下来，使用 maven 打包一个 jar，手动复制到 <code>src/main/docker</code>目录下。</p>
+<p>配置 IDEA 来 build 和 run docker。</p>
+<p><img src="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566898104800.png" alt="配置docker run"></p>
+<p>需要配置的参数如下：</p>
+<p><img src="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566898348067.png" alt="具体配置流程"></p>
+<ol>
+<li>Name，创建的配置文件名称。</li>
+<li>Image tag，创建镜像的 repository:tags。</li>
+<li>Container name，创建容器名。</li>
+<li>Bind posts，端口映射，这里将默认的 8080 端口映射到外网的 8888 端口。</li>
+<li>最后 IDEA 会将参数拼接成 docker build &amp; run 的命令。</li>
+</ol>
+<p>点击 Run。镜像就会被自动 build，并且在容器中运行了。</p>
+<p><img src="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566901917949.png" alt="查看部署日志"></p>
+<p>选择我们刚刚部署的那个容器的 Log tab，就能看到 Spring Boot 启动的日志了，是不是有一种似曾相识的感觉 :smiley:</p>
+<p><img src="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566902052318.png" alt="spring boot日志"></p>
+<p>假设之前我们连接的是本地的 MySQL那么执行到这里应该会报错了，错误如下：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">2019</span>-<span class="number">08</span>-<span class="number">27</span> <span class="number">10</span>:<span class="number">37</span>:<span class="number">04.197</span> ERROR <span class="number">1</span> --- [eate-<span class="number">1939990953</span>] com<span class="selector-class">.alibaba</span><span class="selector-class">.druid</span><span class="selector-class">.pool</span><span class="selector-class">.DruidDataSource</span>   : create connection SQLException, url: jdbc:mysql:<span class="comment">//127.0.0.1:3306/test?serverTimezone=Hongkong&amp;characterEncoding=utf-8&amp;useSSL=false, errorCode 0, state 08S01</span></span><br><span class="line"></span><br><span class="line">com<span class="selector-class">.mysql</span><span class="selector-class">.cj</span><span class="selector-class">.jdbc</span><span class="selector-class">.exceptions</span><span class="selector-class">.CommunicationsException</span>: Communications link failure</span><br><span class="line">Caused by: com<span class="selector-class">.mysql</span><span class="selector-class">.cj</span><span class="selector-class">.exceptions</span><span class="selector-class">.CJCommunicationsException</span>: Communications link failure</span><br><span class="line">Caused by: java<span class="selector-class">.net</span><span class="selector-class">.ConnectException</span>: Connection refused (Connection refused)</span><br></pre></td></tr></table></figure>
+
+<p>这是由于我们配置数据库 url 出现了问题，本地数据库，一般会写 <code>localhost</code> 或 <code>127.0.0.0.1</code>。但是这个地址在 Docker 容器中是不认的。所以连不上本地数据库。幸好 Docker 在安装的时候配置了一个虚拟网桥，通过那个地址可以和 Docker 容器内部进行通信。</p>
+<p>我们在宿主机上的 cmd 中输入 <code>ipconfig</code> ，就可以看到。</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">C:\Users\mqy6289&gt;ipconfig</span><br><span class="line">Windows<span class="built_in"> IP </span>配置</span><br><span class="line"></span><br><span class="line">以太网适配器 vEthernet (DockerNAT):</span><br><span class="line">   连接特定的<span class="built_in"> DNS </span>后缀 . . . . . . . :</span><br><span class="line">   IPv4 地址 . . . . . . . . . . . . : 10.0.75.1</span><br><span class="line">   子网掩码  . . . . . . . . . . . . : 255.255.255.240</span><br><span class="line">   默认网关. . . . . . . . . . . . . :</span><br><span class="line"></span><br><span class="line">以太网适配器 以太网:</span><br><span class="line">   连接特定的<span class="built_in"> DNS </span>后缀 . . . . . . . : apac.arcsoft.corp</span><br><span class="line">   本地链接<span class="built_in"> IPv6 </span>地址. . . . . . . . : fe80::c64:6e72:8311:378c%13</span><br><span class="line">   IPv4 地址 . . . . . . . . . . . . : 172.17.218.99</span><br><span class="line">   子网掩码  . . . . . . . . . . . . : 255.255.224.0</span><br><span class="line">   默认网关. . . . . . . . . . . . . : 172.17.192.1</span><br></pre></td></tr></table></figure>
+
+<p>在 DockerNAT 中，宿主机的 ip 为 10.0.75.1，将数据库的 url ip 改成这个。将之前的容器和镜像删除后，重新执行之前的步骤，发现部署成功。</p>
+<p>在浏览器中输入：<a href="http://127.0.0.1:8888/" target="_blank" rel="noopener">http://127.0.0.1:8888/</a> ，就能看到 hello world 了。整个 Docker 部署的过程完成。</p>
+<p><img src="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566902991835.png" alt="浏览结果"></p>
+<p>针对之前的网络通信问题，我们可以在 cmd 中输入 <code>docker inspect hello-world</code> 来查看容器的参数。可以看到容器的 IP 和网关的确不在一个网段，无法进行通信。</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"Networks"</span>: &#123;</span><br><span class="line">        <span class="attr">"bridge"</span>: &#123;</span><br><span class="line">            <span class="attr">"Gateway"</span>: <span class="string">"172.17.0.1"</span>,</span><br><span class="line">            <span class="attr">"IPAddress"</span>: <span class="string">"172.17.0.2"</span>,</span><br><span class="line">            <span class="attr">"MacAddress"</span>: <span class="string">"02:42:ac:11:00:02"</span>,</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Use-Maven-Plugin"><a href="#Use-Maven-Plugin" class="headerlink" title="Use Maven Plugin"></a>Use Maven Plugin</h3><p>之前我们创建完 <code>dockerfile</code> 之后通过 IDEA 进行镜像的 build 和 run 工作，同样的我们也可以通过 Maven 插件将 Docker 镜像和容器的构建和 Maven 集成起来。阅读了很多博客，大多数任然使用 <code>docker-maven-plugin</code>，但是这个插件早就已经被官方废弃，不推荐使用，<strong><a href="https://github.com/spotify" target="_blank" rel="noopener">spotify</a> 也推荐使用 <code>dockerfile-maven-plugin</code> 来代替</strong>。下面的 pom.xml 的配置：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.spotify<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>dockerfile-maven-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;dockerfile-maven-plugin.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">contextDirectory</span>&gt;</span>src/main/docker<span class="tag">&lt;/<span class="name">contextDirectory</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">repository</span>&gt;</span>$&#123;docker.image.prefix&#125;/$&#123;project.artifactId&#125;<span class="tag">&lt;/<span class="name">repository</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tag</span>&gt;</span>v1<span class="tag">&lt;/<span class="name">tag</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>刷新后，可在 IDEA 的 Maven tab 看到插件的功能，主要用到的就是 build、push、tag。</p>
+<p>默认插件会找本地 <code>tcp://localhost:2375</code> 如果开启了，双击 <code>dockerfile:build</code> 镜像就会被 build 到 Docker 中去。</p>
+<p><img src="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/spring-boot-with-docker/1566956922463.png" alt="maven部署日志"></p>
+<p>可以看到，整个 build 的过程被放到 Maven 中去了。需要运行的话，选择相应的镜像，<code>create container</code> 再做简单配置就可以了。</p>
+<h2 id="Troubleshooting"><a href="#Troubleshooting" class="headerlink" title="Troubleshooting"></a>Troubleshooting</h2><ol>
+<li><strong>数据库连接不上。</strong></li>
+</ol>
+<p>本地数据库需要配置支持远程额访问，由于是 Windows，一般不会配置，可能会忽视。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> <span class="keyword">USER</span> <span class="keyword">SET</span> HOST = <span class="string">'%'</span> <span class="keyword">WHERE</span> <span class="keyword">USER</span> = <span class="string">'root'</span>;</span><br><span class="line"><span class="keyword">FLUSH</span> <span class="keyword">PRIVILEGES</span>;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><strong>进入终端</strong></li>
+</ol>
+<p>我们这个基础镜像是 Java，默认应该是不带终端的，如果要查看的话，可再起一个容器</p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">run</span> -ti <span class="comment">--entrypoint /bin/sh springboot/spring-docker:v1</span></span><br></pre></td></tr></table></figure>
+
+<p>进入后输入 <code>ls -al</code>，可以看到之前复制过去的 <code>app.jar</code> 文件</p>
+<h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><p>本文主要讲了如果在 Docker 中部署 Spring Boot 项目，针对于 Dockfile 的写法和 Maven 插件的使用，可以看参考文献 5-6，里面有更多的细节。我个人觉得这种部署方法，直接把 jar 和基本的环境打成一个 Docker 镜像还是过于简单了，很难去做监控和管理。是否还是应该像服务器部署那样，创建一个基本的 Centos 镜像，然后安装 Java 的环境，通过 ssh 连接，直接把 jar 包和配置文件复制到容器中通过 bash 运行，这种方式可能更符合常理。后期如果工作上有需求，可以再深度学习一下，看看实际生产中是如何操作的。</p>
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><ol>
+<li><a href="https://docs.docker.com/get-started/" target="_blank" rel="noopener">Docker Get Started</a></li>
+<li><a href="https://juejin.im/post/5cacbfd7e51d456e8833390c#heading-13" target="_blank" rel="noopener">30 分钟快速入门 Docker 教程</a></li>
+<li><a href="https://www.cnblogs.com/ityouknow/p/8520296.html" target="_blank" rel="noopener">Docker(一)：Docker入门教程</a></li>
+<li><a href="https://www.cnblogs.com/ityouknow/p/8599093.html" target="_blank" rel="noopener">Spring Boot 2.0(四)：使用 Docker 部署 Spring Boot</a></li>
+<li><a href="https://spring.io/guides/gs/spring-boot-docker/" target="_blank" rel="noopener">Spring Boot with Docker</a></li>
+<li><a href="https://spring.io/guides/topicals/spring-boot-docker" target="_blank" rel="noopener">Spring Boot Docker</a></li>
+</ol>
+<h2 id="Source-Code"><a href="#Source-Code" class="headerlink" title="Source Code"></a><a href="https://github.com/maoqyhz/blog-example-code/tree/master/spring-docker" target="_blank" rel="noopener">Source Code</a></h2>
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="Fururur 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Fururur
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://furur.xyz/2019/08/28/spring-boot-with-docker.html" title="Windows Docker 部署 Spring Boot 项目">https://furur.xyz/2019/08/28/spring-boot-with-docker.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Docker/" rel="tag"># Docker</a>
+              <a href="/tags/Spring-Boot/" rel="tag"># Spring Boot</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/08/26/cd-guys.html" rel="prev" title="Cantonpop & CD guys">
+      <i class="fa fa-chevron-left"></i> Cantonpop & CD guys
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/08/28/initial-experience-of-spring-boot-20-load-balance.html" rel="next" title="Spring Cloud 负载均衡初体验">
+      Spring Cloud 负载均衡初体验 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+  
+    <div class="comments" id="comments">
+        
+<script src="https://utteranc.es/client.js"
+        repo="maoqyhz/blog-comments"
+        issue-term="pathname"
+        label="Comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+    </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Docker-Configuration"><span class="nav-text">Docker Configuration</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Config-IDEA-Plugin"><span class="nav-text">Config IDEA Plugin</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Create-Spring-Boot-Project"><span class="nav-text">Create Spring Boot Project</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Containerize-It"><span class="nav-text">Containerize It</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Use-Dockerfile"><span class="nav-text">Use Dockerfile</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Use-Maven-Plugin"><span class="nav-text">Use Maven Plugin</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Troubleshooting"><span class="nav-text">Troubleshooting</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Summary"><span class="nav-text">Summary</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Reference"><span class="nav-text">Reference</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Source-Code"><span class="nav-text">Source Code</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Fururur"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Fururur</p>
+  <div class="site-description" itemprop="description">原来你也在这里</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/maoqyhz" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;maoqyhz" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/3160001350" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;3160001350" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.instagram.com/_fururur" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;_fururur" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://www.cnblogs.com/Sinte-Beuve" title="博客园 → http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank"><i class="fa fa-fw fa-wordpress"></i>博客园</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://www.cnblogs.com/Sinte-Beuve" title="http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank">我的博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://fucknmb.com/" title="http:&#x2F;&#x2F;fucknmb.com" rel="noopener" target="_blank">区长</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://draveness.me/" title="https:&#x2F;&#x2F;draveness.me&#x2F;" rel="noopener" target="_blank">面向信仰编程</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://blog.didispace.com/spring-boot-learning-1x/" title="http:&#x2F;&#x2F;blog.didispace.com&#x2F;spring-boot-learning-1x&#x2F;" rel="noopener" target="_blank">程序猿DD</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnkirito.moe/" title="https:&#x2F;&#x2F;www.cnkirito.moe&#x2F;" rel="noopener" target="_blank">徐靖峰|个人博客</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://imququ.com/post/series.html" title="https:&#x2F;&#x2F;imququ.com&#x2F;post&#x2F;series.html" rel="noopener" target="_blank">Jerry Qu的小站</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://spring.hhui.top/" title="http:&#x2F;&#x2F;spring.hhui.top&#x2F;" rel="noopener" target="_blank">一灰灰Blog</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Fururur</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

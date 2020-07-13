@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/fur.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"furur.xyz","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="最近接收了一个老项目，突然甲方 QA 报了一个 bug，连续请求 60 次，成功 8 次，后面的 52 次全部失败，而且成功的 case 返回时间普遍较长。看了日志，并非业务上的异常。这让刚毕业没什么经验的我，顿时陷入了沉思。但回过神来考虑了一下，大胆才猜测，可能是网络问题或者是并发请求上的问题。 但其实业务异常相对容易排查，而网络或者并发的问题会相对难一些，刚好自己对于服务器服务器请求处理的流程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Bug复盘：接口异步返回的重要性">
+<meta property="og:url" content="https://furur.xyz/2019/12/24/bug-review-importance-of-interface-async-return.html">
+<meta property="og:site_name" content="Fururur.">
+<meta property="og:description" content="最近接收了一个老项目，突然甲方 QA 报了一个 bug，连续请求 60 次，成功 8 次，后面的 52 次全部失败，而且成功的 case 返回时间普遍较长。看了日志，并非业务上的异常。这让刚毕业没什么经验的我，顿时陷入了沉思。但回过神来考虑了一下，大胆才猜测，可能是网络问题或者是并发请求上的问题。 但其实业务异常相对容易排查，而网络或者并发的问题会相对难一些，刚好自己对于服务器服务器请求处理的流程">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/bug-review-importance-of-interface-async-return/697102-20191220143807747-1782228901.png?x-oss-process=style/logo">
+<meta property="article:published_time" content="2019-12-24T14:38:27.000Z">
+<meta property="article:modified_time" content="2020-07-13T11:28:06.063Z">
+<meta property="article:author" content="Fururur">
+<meta property="article:tag" content="Tomcat">
+<meta property="article:tag" content="Concurrency Programming">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/bug-review-importance-of-interface-async-return/697102-20191220143807747-1782228901.png?x-oss-process=style/logo">
+
+<link rel="canonical" href="https://furur.xyz/2019/12/24/bug-review-importance-of-interface-async-return.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Bug复盘：接口异步返回的重要性 | Fururur.</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?7889dcbf75b5eb88d87b678f31d5e900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Fururur.</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/maoqyhz" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://furur.xyz/2019/12/24/bug-review-importance-of-interface-async-return.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Fururur">
+      <meta itemprop="description" content="原来你也在这里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Fururur.">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Bug复盘：接口异步返回的重要性
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-24 22:38:27" itemprop="dateCreated datePublished" datetime="2019-12-24T22:38:27+08:00">2019-12-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-13 19:28:06" itemprop="dateModified" datetime="2020-07-13T19:28:06+08:00">2020-07-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>最近接收了一个老项目，突然甲方 QA 报了一个 bug，连续请求 60 次，成功 8 次，后面的 52 次全部失败，而且成功的 case 返回时间普遍较长。看了日志，并非业务上的异常。这让刚毕业没什么经验的我，顿时陷入了沉思。但回过神来考虑了一下，大胆才猜测，可能是网络问题或者是并发请求上的问题。</p>
+<p>但其实业务异常相对容易排查，而网络或者并发的问题会相对难一些，刚好自己对于服务器服务器请求处理的流程也不太清楚，所以就花了时间看了下，最后基本断定是接口是实现方式出现了问题，重新改写成异步接口后问题基本解决。</p>
+<p>所以今天就打算复盘一下，聊聊 tomcat 处理请求的流程，心里好有个数，以及对于某些场合下接口异步返回的重要性。</p>
+<a id="more"></a>
+
+<h2 id="Tomcat-请求流程"><a href="#Tomcat-请求流程" class="headerlink" title="Tomcat 请求流程"></a>Tomcat 请求流程</h2><p>项目是 Spring Boot 开发的，默认用 jar 包部署，实际上就是运行在一个内嵌的 tomcat 中，所以下面就简单理一下 tomcat 处理并发请求的基本流程。这里不具体涉及到相关的组件以及源码，仅仅是梳理过程。</p>
+<p>基本的 HTTP 请求处理的过程如下图，其中 Connector 和 Engine 是 tomcat 内置的组件。</p>
+<p><img src="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/bug-review-importance-of-interface-async-return/697102-20191220143807747-1782228901.png?x-oss-process=style/logo" alt="image"></p>
+<ol>
+<li>Connector 会监听响应的端口，例如 80 或 443，新的 HTTP 请求过来后会做响应的处理。</li>
+<li>Connector 接受请求后，将其封装成 Request 对象，并创建线程来处理。tomcat 默认可以处理的并发数为 200 个（通过 <code>maxThreads</code> 参数设置），实际的处理速度取决于我们自己实现的服务程序；超出 <code>maxThreads</code> 部分，tomcat 仍然不断接收，但最多不能超过 <code>maxConnector</code> 设置的数，默认 1w 个；超过 <code>maxConnector</code> 的部分，tomcat 仍然不断接收，但不做处理，放入 Connector 创建的一个队列中，但最多不能超过 <code>acceptCount</code>，超过则拒绝（也就是我们所说的，服务器卡死、挂了）。</li>
+<li>配置时 Connector 会与 Engine 进行绑定，新创建的线程会在 pipeline 中有序等待 Engine 进行处理，其中就包含了 servlet 和 Spring MVC 的处理流程。</li>
+<li>Engine 处理完成后会将结果返回给对应的 Connector，再做进一步封装后返回给 HTTP 请求的一方。</li>
+</ol>
+<p>清楚了上述流程之后，基本上对于服务器如何处理并发请求有了一个基本的概念，当并发量大的时候，可以对上述参数进行改动，以适应自己的项目。</p>
+<h2 id="接口异步返回的重要性"><a href="#接口异步返回的重要性" class="headerlink" title="接口异步返回的重要性"></a>接口异步返回的重要性</h2><p>在回到之前讲的项目上来，可以看到 tomcat 默认配置就已经具有不小的并发量了，并且在 Spring Boot 中 Controller 是单例的，且每个请求的处理互不相关，但是为什么接口返回的速度仍然不似预期呢？这其实和这个项目的业务时有关的。</p>
+<p>这个接口是对算法的集成，发起请求后需要通过 HTTP 调用算法处理返回结果，请求调用的速度远大于接口处理的速度，再者算法依赖于独占的 GPU，也就意味着一个请求在处理时，其他请求必须等待。而之前实现的接口是同步的，且设置的算法接口返回的 timeout 为 15s，因此当请求积累到一定数量时，后续等待时间超过 15s，直接返回了异常的结果，导致后续请求全部失败。</p>
+<p>显然，在处理速度低于请求速度的接口，并且依赖资源是独占或者很紧张的场景下，通过同步的形式返回接口是不可取的。由于接口占用的资源有限，可以理解成将此接口加上了一个 <code>synchronized</code>，后续请求过来都会无限制等待，或者设置了 timeout，无限制拒绝服务，这两种情况都不是我们想要的。</p>
+<p>异步就是一种更优雅的形式，请求发送后，接口的调用者可以继续干别的事，请求处理完后会自动通知给调用者。并且在 Java 中的实现也是比较简单的，直接创建一个线程池来接收请求就可以了，线程池自带阻塞队列已经很好地帮我们处理排队这个场景，分布式场景则需要考虑用 redis 或者成熟的 mq 框架来进行调度了。调用者额外需要实现一个 callback 接口来接收处理完后的结果。这样再多的请求都能够有序的获取到处理的结果，无非是耗时的长短问题罢了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RequestMapping</span>(value = <span class="string">"handleTask"</span>, method = RequestMethod.POST)</span><br><span class="line"><span class="function"><span class="keyword">public</span> RestResult <span class="title">handleTask</span><span class="params">(HttpServletRequest request,String callbackUrl)</span> </span>&#123;</span><br><span class="line">    mServerPool.submit((Runnable) SpringUtil.getBean(<span class="string">"imageTask"</span>, callbackUrl));</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> RestResult();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其实，用过支付宝支付 API 的开发者应该很熟悉这个套路，因为阿里也是这么在做的，发起支付后，用户有一段时间可以确认支付，因此这个过程并非事实返回的，所有会有一个 callback 接口，用于实现用户支付完成的后的业务逻辑，当用户完成支付后，支付宝服务器会回调到这个接口，完成最终的一个业务。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>以前一直觉得异步、并发很抽象，学习的时候也总是那么几个 demo（交叉输出、生产者消费者 etc.），但是真正遇到这么一个场景的时候，发现一切都是水到渠成的。只有在不断的实践中，才能调整对某一编程思想的认识，有新的体会。</p>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="Fururur 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Fururur
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://furur.xyz/2019/12/24/bug-review-importance-of-interface-async-return.html" title="Bug复盘：接口异步返回的重要性">https://furur.xyz/2019/12/24/bug-review-importance-of-interface-async-return.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Tomcat/" rel="tag"># Tomcat</a>
+              <a href="/tags/Concurrency-Programming/" rel="tag"># Concurrency Programming</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/12/09/case-study-springcache-vs-api.html" rel="prev" title="一个缓存使用的思考：Spring Cache VS Caffeine 原生 API">
+      <i class="fa fa-chevron-left"></i> 一个缓存使用的思考：Spring Cache VS Caffeine 原生 API
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/12/24/talking-about-api-signature.html" rel="next" title="聊聊 API 签名方式">
+      聊聊 API 签名方式 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+  
+    <div class="comments" id="comments">
+        
+<script src="https://utteranc.es/client.js"
+        repo="maoqyhz/blog-comments"
+        issue-term="pathname"
+        label="Comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+    </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Tomcat-请求流程"><span class="nav-text">Tomcat 请求流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#接口异步返回的重要性"><span class="nav-text">接口异步返回的重要性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Fururur"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Fururur</p>
+  <div class="site-description" itemprop="description">原来你也在这里</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/maoqyhz" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;maoqyhz" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/3160001350" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;3160001350" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.instagram.com/_fururur" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;_fururur" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://www.cnblogs.com/Sinte-Beuve" title="博客园 → http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank"><i class="fa fa-fw fa-wordpress"></i>博客园</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://www.cnblogs.com/Sinte-Beuve" title="http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank">我的博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://fucknmb.com/" title="http:&#x2F;&#x2F;fucknmb.com" rel="noopener" target="_blank">区长</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://draveness.me/" title="https:&#x2F;&#x2F;draveness.me&#x2F;" rel="noopener" target="_blank">面向信仰编程</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://blog.didispace.com/spring-boot-learning-1x/" title="http:&#x2F;&#x2F;blog.didispace.com&#x2F;spring-boot-learning-1x&#x2F;" rel="noopener" target="_blank">程序猿DD</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnkirito.moe/" title="https:&#x2F;&#x2F;www.cnkirito.moe&#x2F;" rel="noopener" target="_blank">徐靖峰|个人博客</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://imququ.com/post/series.html" title="https:&#x2F;&#x2F;imququ.com&#x2F;post&#x2F;series.html" rel="noopener" target="_blank">Jerry Qu的小站</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://spring.hhui.top/" title="http:&#x2F;&#x2F;spring.hhui.top&#x2F;" rel="noopener" target="_blank">一灰灰Blog</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Fururur</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

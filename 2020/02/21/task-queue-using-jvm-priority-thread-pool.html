@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/fur.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"furur.xyz","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="我们都知道 web 服务的工作大多是接受 http 请求，并返回处理后的结果。服务器接受的每一个请求又可以看是一个任务。一般而言这些请求任务会根据请求的先后有序处理，如果请求任务的处理比较耗时，往往就需要排队了。而同时不同的任务直接可能会存在一些优先级的变化，这时候就需要引入任务队列并进行管理了。可以做任务队列的东西有很多，Java 自带的线程池，以及其他的消息中间件都可以。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM优先级线程池做任务队列">
+<meta property="og:url" content="https://furur.xyz/2020/02/21/task-queue-using-jvm-priority-thread-pool.html">
+<meta property="og:site_name" content="Fururur.">
+<meta property="og:description" content="我们都知道 web 服务的工作大多是接受 http 请求，并返回处理后的结果。服务器接受的每一个请求又可以看是一个任务。一般而言这些请求任务会根据请求的先后有序处理，如果请求任务的处理比较耗时，往往就需要排队了。而同时不同的任务直接可能会存在一些优先级的变化，这时候就需要引入任务队列并进行管理了。可以做任务队列的东西有很多，Java 自带的线程池，以及其他的消息中间件都可以。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-02-21T11:20:16.000Z">
+<meta property="article:modified_time" content="2020-07-13T11:24:06.920Z">
+<meta property="article:author" content="Fururur">
+<meta property="article:tag" content="线程池">
+<meta property="article:tag" content="消息队列">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://furur.xyz/2020/02/21/task-queue-using-jvm-priority-thread-pool.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>JVM优先级线程池做任务队列 | Fururur.</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?7889dcbf75b5eb88d87b678f31d5e900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Fururur.</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/maoqyhz" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://furur.xyz/2020/02/21/task-queue-using-jvm-priority-thread-pool.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Fururur">
+      <meta itemprop="description" content="原来你也在这里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Fururur.">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JVM优先级线程池做任务队列
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-02-21 19:20:16" itemprop="dateCreated datePublished" datetime="2020-02-21T19:20:16+08:00">2020-02-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-13 19:24:06" itemprop="dateModified" datetime="2020-07-13T19:24:06+08:00">2020-07-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>我们都知道 web 服务的工作大多是接受 http 请求，并返回处理后的结果。服务器接受的每一个请求又可以看是一个任务。一般而言这些请求任务会根据请求的先后有序处理，如果请求任务的处理比较耗时，往往就需要排队了。而同时不同的任务直接可能会存在一些优先级的变化，这时候就需要引入任务队列并进行管理了。可以做任务队列的东西有很多，Java 自带的线程池，以及其他的消息中间件都可以。</p>
+<a id="more"></a>
+
+<h2 id="同步与异步"><a href="#同步与异步" class="headerlink" title="同步与异步"></a>同步与异步</h2><p>这个问题在之前已经提过很多次了，有些任务是需要请求后立即返回结果的，而有的则不需要。设想一下你下单购物的场景，付完钱后，系统只需要返回一个支付成功即可，后续的积分增加、优惠券发放、安排发货等等业务都不需要实时返回给用户的，这些就是异步的任务。大量的异步任务到达我们部署的服务上，由于处理效率的瓶颈，无法达到实时处理，因此与需要用队列将他们暂时保存起来，排队处理。</p>
+<h2 id="线程池"><a href="#线程池" class="headerlink" title="线程池"></a>线程池</h2><p>在 Java 中提到队列，我们除了想到基本的数据结构之外，应该还有线程池。线程池自带一套机制可以实现任务的排队和执行，可以满足单点环境下绝大多数异步化的场景。下面是典型的一个处理流程：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 注入合适类型的线程池</span></span><br><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ThreadPoolExecutor asyncPool;</span><br><span class="line"><span class="meta">@RequestMapping</span>(value = <span class="string">"/async/someOperate"</span>, method = RequestMethod.POST)</span><br><span class="line"><span class="function"><span class="keyword">public</span> RestResult <span class="title">someOperate</span><span class="params">(HttpServletRequest request, String params,String callbackUrl &#123;</span></span></span><br><span class="line"><span class="function"><span class="params">    // 接受请求后 submit 到线程池排队处理</span></span></span><br><span class="line"><span class="function"><span class="params">    asyncPool.submit(new Task(params,callbackUrl)</span></span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> RestResult(ResultCode.SUCCESS.getCode(), <span class="keyword">null</span>) &#123;&#123;</span><br><span class="line">        setMsg(<span class="string">"successful!"</span> + prop.getShowMsg());</span><br><span class="line">    &#125;&#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 异步任务处理</span></span><br><span class="line"><span class="meta">@Slf</span>4j</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Task</span> <span class="keyword">extends</span> <span class="title">Callable</span>&lt;<span class="title">RestResult</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> String params;</span><br><span class="line">    <span class="keyword">private</span> String callbackUrl;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> IAlgorithmService algorithmService = SpringUtil.getBean(IAlgorithmServiceImpl<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ServiceUtils serviceUtils = SpringUtil.getBean(ServiceUtils<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">ImageTask</span><span class="params">(String params,String callbackUrl)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.params = params;</span><br><span class="line">        <span class="keyword">this</span>.callbackUrl = callbackUrl;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> RestResult <span class="title">call</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 业务处理</span></span><br><span class="line">            CarDamageResult result = algorithmService.someOperate(<span class="keyword">this</span>.params);</span><br><span class="line">            <span class="comment">// 回调</span></span><br><span class="line">            <span class="keyword">return</span> serviceUtils.callback(<span class="keyword">this</span>.callbackUrl, <span class="keyword">this</span>.caseNum, ResultCode.SUCCESS.getCode(), result, <span class="keyword">this</span>.isAsync);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (ServiceException e) &#123;</span><br><span class="line">            <span class="keyword">return</span> serviceUtils.callback(<span class="keyword">this</span>.callbackUrl, <span class="keyword">this</span>.caseNum, e.getCode(), <span class="keyword">null</span>, <span class="keyword">this</span>.isAsync);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>对于线程池这里就不具体展开讲了，仅仅简单理了下具体的流程：</p>
+<ol>
+<li>收到请求后，参数校验后传入线程池排队。</li>
+<li>返回结果：“请求成功，正在处理”。</li>
+<li>任务排到后由相应的线程处理，处理完后进行接口回调。</li>
+</ol>
+<p>上面的例子描述了一个生产速度远远大于消费速度的模型，普通面向数据库开发的企业级应用，由于数据库的连接池开发的连接数较大，一般不需要这样通过线程池来处理，而一些 GPU 密集型的应用场景，由于显存的瓶颈导致消费速度慢时，就需要队列来作出调整了。</p>
+<h2 id="带优先级的线程池"><a href="#带优先级的线程池" class="headerlink" title="带优先级的线程池"></a>带优先级的线程池</h2><p>更复杂的，例如考虑到任务的优先级，还需要对线程池进行重写，通过 <code>PriorityBlockingQueue</code> 来替换默认的阻塞队列。直接上代码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> lombok.Data;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.Callable;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> Fururur</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020-01-14-10:37</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Data</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">PriorityCallable</span>&lt;<span class="title">T</span>&gt; <span class="keyword">implements</span> <span class="title">Callable</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> priority;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> lombok.Getter;</span><br><span class="line"><span class="keyword">import</span> lombok.Setter;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.*;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.atomic.AtomicLong;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 优先级线程池的实现</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> Fururur</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2019-07-23-10:19</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PriorityThreadPoolExecutor</span> <span class="keyword">extends</span> <span class="title">ThreadPoolExecutor</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> ThreadLocal&lt;Integer&gt; local = ThreadLocal.withInitial(() -&gt; <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">PriorityThreadPoolExecutor</span><span class="params">(<span class="keyword">int</span> corePoolSize, <span class="keyword">int</span> maximumPoolSize, <span class="keyword">long</span> keepAliveTime, TimeUnit unit)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(corePoolSize, maximumPoolSize, keepAliveTime, unit, getWorkQueue());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">PriorityThreadPoolExecutor</span><span class="params">(<span class="keyword">int</span> corePoolSize, <span class="keyword">int</span> maximumPoolSize,</span></span></span><br><span class="line"><span class="function"><span class="params">                                      <span class="keyword">long</span> keepAliveTime, TimeUnit unit, ThreadFactory threadFactory)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(corePoolSize, maximumPoolSize, keepAliveTime, unit, getWorkQueue(), threadFactory);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">PriorityThreadPoolExecutor</span><span class="params">(<span class="keyword">int</span> corePoolSize, <span class="keyword">int</span> maximumPoolSize,</span></span></span><br><span class="line"><span class="function"><span class="params">                                      <span class="keyword">long</span> keepAliveTime, TimeUnit unit, RejectedExecutionHandler handler)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(corePoolSize, maximumPoolSize, keepAliveTime, unit, getWorkQueue(), handler);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">PriorityThreadPoolExecutor</span><span class="params">(<span class="keyword">int</span> corePoolSize, <span class="keyword">int</span> maximumPoolSize,</span></span></span><br><span class="line"><span class="function"><span class="params">                                      <span class="keyword">long</span> keepAliveTime, TimeUnit unit, ThreadFactory threadFactory,</span></span></span><br><span class="line"><span class="function"><span class="params">                                      RejectedExecutionHandler handler)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(corePoolSize, maximumPoolSize, keepAliveTime, unit, getWorkQueue(), threadFactory, handler);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> PriorityBlockingQueue <span class="title">getWorkQueue</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> PriorityBlockingQueue();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">(Runnable command)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> priority = local.get();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">this</span>.execute(command, priority);</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            local.set(<span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">(Runnable command, <span class="keyword">int</span> priority)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.execute(<span class="keyword">new</span> PriorityRunnable(command, priority));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; <span class="function">Future&lt;T&gt; <span class="title">submit</span><span class="params">(PriorityCallable&lt;T&gt; task)</span> </span>&#123;</span><br><span class="line">        local.set(task.getPriority());</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">super</span>.submit(task);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; <span class="function">Future&lt;T&gt; <span class="title">submit</span><span class="params">(Runnable task, T result, <span class="keyword">int</span> priority)</span> </span>&#123;</span><br><span class="line">        local.set(priority);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">super</span>.submit(task, result);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Future&lt;?&gt; submit(Runnable task, <span class="keyword">int</span> priority) &#123;</span><br><span class="line">        local.set(priority);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">super</span>.submit(task);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Getter</span></span><br><span class="line">    <span class="meta">@Setter</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">PriorityRunnable</span> <span class="keyword">implements</span> <span class="title">Runnable</span>, <span class="title">Comparable</span>&lt;<span class="title">PriorityRunnable</span>&gt; </span>&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">static</span> AtomicLong seq = <span class="keyword">new</span> AtomicLong();</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">long</span> seqNum;</span><br><span class="line">        <span class="keyword">private</span> Runnable run;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">int</span> priority;</span><br><span class="line"></span><br><span class="line">        PriorityRunnable(Runnable run, <span class="keyword">int</span> priority) &#123;</span><br><span class="line">            seqNum = seq.getAndIncrement();</span><br><span class="line">            <span class="keyword">this</span>.run = run;</span><br><span class="line">            <span class="keyword">this</span>.priority = priority;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.run.run();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">compareTo</span><span class="params">(PriorityRunnable other)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">int</span> res = <span class="number">0</span>;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">this</span>.priority == other.priority) &#123;</span><br><span class="line">                <span class="keyword">if</span> (other.run != <span class="keyword">this</span>.run) &#123;</span><br><span class="line">                    <span class="comment">// ASC</span></span><br><span class="line">                    res = (seqNum &lt; other.seqNum ? -<span class="number">1</span> : <span class="number">1</span>);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// DESC</span></span><br><span class="line">                res = <span class="keyword">this</span>.priority &gt; other.priority ? -<span class="number">1</span> : <span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> res;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>要点如下：</p>
+<ol>
+<li>替换线程池默认的阻塞队列为 <code>PriorityBlockingQueue</code>，响应的传入的线程类需要实现 <code>Comparable&lt;T&gt;</code> 才能进行比较。</li>
+<li><code>PriorityBlockingQueue</code> 的数据结构决定了，优先级相同的任务无法保证 FIFO，需要自己控制顺序。</li>
+<li>需要重写线程池的 <code>execute()</code> 方法。看过线程池源码的会发现，执行 <code>submit(task)</code> 方法后，都会转化成 <code>RunnableFuture&lt;T&gt;</code> 再进一步执行，由于传入的 task 虽然实现了 <code>Comparable&lt;T&gt;</code> 到，但是内部转换成的 <code>RunnableFuture&lt;T&gt;</code> 并未实现，因此直接 <code>submit</code> 会抛出 <code>Caused by: java.lang.ClassCastException: java.util.concurrent.FutureTask cannot be cast to java.lang.Comparable</code> 这样一个异常，所以需要重写 <code>execute()</code> 方法，构造一个 <code>PriorityRunnable</code> 作为中转。</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>JVM 线程池是实现异步任务队列最简单最原生的一种方式，本文介绍了基本的使用流程和带有优先队列需求的用法。这种方法可有满足到一些简单的业务场景，但也存在一定的局限性：</p>
+<ul>
+<li>JVM 线程池是单机的，横向扩展多个服务下做负载均衡时，就会存在多个线程池了他们是分开工作的，无法很好的统一和管理，不太适合分布式场景。</li>
+<li>JVM 线程池是基于内存的，一旦服务挂了，会出现任务丢失的情况，可靠性低。</li>
+<li>缺少作为任务队列的 ack 机制，一旦任务失败不会重新执行，且无法很好地对线程池队列进行监控。</li>
+</ul>
+<p>显然简单的 JVM 线程池是无法 handle 到负载的业务场景的，这就需要引入其他中间件了，在接下来的文章中我们会继续探讨。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ul>
+<li><p><a href="https://www.jianshu.com/p/6c3021779015" target="_blank" rel="noopener">ThreadPoolExecutor 优先级的线程池</a></p>
+</li>
+<li><p><a href="https://stackoverflow.com/questions/30574777/implementing-priorityqueue-on-threadpoolexecutor" target="_blank" rel="noopener">implementing PriorityQueue on ThreadPoolExecutor</a></p>
+</li>
+<li><p><a href="https://www.twblogs.net/a/5b7cdfc42b71770a43dcf6d0/zh-cn" target="_blank" rel="noopener">ThreadPoolExecutor 的 PriorityBlockingQueue 类型转化问题</a></p>
+</li>
+<li><p><a href="https://www.infoq.cn/article/uMQb2CFDgRFcDUz9OFD1" target="_blank" rel="noopener">大搜车异步任务队列中间件的建设实践</a></p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="Fururur 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Fururur
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://furur.xyz/2020/02/21/task-queue-using-jvm-priority-thread-pool.html" title="JVM优先级线程池做任务队列">https://furur.xyz/2020/02/21/task-queue-using-jvm-priority-thread-pool.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/" rel="tag"># 线程池</a>
+              <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" rel="tag"># 消息队列</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/12/24/talking-about-api-signature.html" rel="prev" title="聊聊 API 签名方式">
+      <i class="fa fa-chevron-left"></i> 聊聊 API 签名方式
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/28/how-to-read-inputstream-twice.html" rel="next" title="解决 HttpServletRequest 流数据不可重复读">
+      解决 HttpServletRequest 流数据不可重复读 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+  
+    <div class="comments" id="comments">
+        
+<script src="https://utteranc.es/client.js"
+        repo="maoqyhz/blog-comments"
+        issue-term="pathname"
+        label="Comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+    </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#同步与异步"><span class="nav-text">同步与异步</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#线程池"><span class="nav-text">线程池</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#带优先级的线程池"><span class="nav-text">带优先级的线程池</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-text">参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Fururur"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Fururur</p>
+  <div class="site-description" itemprop="description">原来你也在这里</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/maoqyhz" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;maoqyhz" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/3160001350" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;3160001350" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.instagram.com/_fururur" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;_fururur" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://www.cnblogs.com/Sinte-Beuve" title="博客园 → http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank"><i class="fa fa-fw fa-wordpress"></i>博客园</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://www.cnblogs.com/Sinte-Beuve" title="http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank">我的博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://fucknmb.com/" title="http:&#x2F;&#x2F;fucknmb.com" rel="noopener" target="_blank">区长</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://draveness.me/" title="https:&#x2F;&#x2F;draveness.me&#x2F;" rel="noopener" target="_blank">面向信仰编程</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://blog.didispace.com/spring-boot-learning-1x/" title="http:&#x2F;&#x2F;blog.didispace.com&#x2F;spring-boot-learning-1x&#x2F;" rel="noopener" target="_blank">程序猿DD</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnkirito.moe/" title="https:&#x2F;&#x2F;www.cnkirito.moe&#x2F;" rel="noopener" target="_blank">徐靖峰|个人博客</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://imququ.com/post/series.html" title="https:&#x2F;&#x2F;imququ.com&#x2F;post&#x2F;series.html" rel="noopener" target="_blank">Jerry Qu的小站</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://spring.hhui.top/" title="http:&#x2F;&#x2F;spring.hhui.top&#x2F;" rel="noopener" target="_blank">一灰灰Blog</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Fururur</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/fur.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"furur.xyz","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="这并不是一篇博客搭建教程。内容主要包含个人对于Hexo博客搭建的心得，Next6.0主题美化的部分建议，以及摘录一些各种用于博客搭建的link。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hexo 博客搭建以及 Next 主题美化的经验之谈">
+<meta property="og:url" content="https://furur.xyz/2018/05/19/hexo-build-blog.html">
+<meta property="og:site_name" content="Fururur.">
+<meta property="og:description" content="这并不是一篇博客搭建教程。内容主要包含个人对于Hexo博客搭建的心得，Next6.0主题美化的部分建议，以及摘录一些各种用于博客搭建的link。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://furur.xyz/2018/05/19/manage.png">
+<meta property="og:image" content="https://furur.xyz/2018/05/19/dnspod.png">
+<meta property="article:published_time" content="2018-05-19T06:33:48.000Z">
+<meta property="article:modified_time" content="2020-07-13T08:27:07.492Z">
+<meta property="article:author" content="Fururur">
+<meta property="article:tag" content="Hexo">
+<meta property="article:tag" content="Hexo Next">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://furur.xyz/2018/05/19/manage.png">
+
+<link rel="canonical" href="https://furur.xyz/2018/05/19/hexo-build-blog.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Hexo 博客搭建以及 Next 主题美化的经验之谈 | Fururur.</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?7889dcbf75b5eb88d87b678f31d5e900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Fururur.</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/maoqyhz" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://furur.xyz/2018/05/19/hexo-build-blog.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Fururur">
+      <meta itemprop="description" content="原来你也在这里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Fururur.">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Hexo 博客搭建以及 Next 主题美化的经验之谈
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-05-19 14:33:48" itemprop="dateCreated datePublished" datetime="2018-05-19T14:33:48+08:00">2018-05-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-13 16:27:07" itemprop="dateModified" datetime="2020-07-13T16:27:07+08:00">2020-07-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>这并不是一篇博客搭建教程。内容主要包含个人对于Hexo博客搭建的心得，Next6.0主题美化的部分建议，以及摘录一些各种用于博客搭建的link。</p>
+</blockquote>
+<a id="more"></a>
+
+<p>惯例，第一篇博客献给Hexo。</p>
+<p>个人博客的搭建不外乎两种，类似Wordpress的动态博客，类似Hexo的静态博客。前者搭建好了之后维护起来还是比较方便的，不管是发文还是添加分类等等都可以在后台管理中进行；而后者则需要手动进行管理，从博客的美化到内容的维护，当然也存在hexo-admin这类的插件。However，前者需要一个服务器，emmm，后者的话托管在github或者coding就ok，短时间内能用完100M的估计也是人才了。</p>
+<p>Absolutely，博主选择了后者。Hexo的教程网上多了去了，也写的够详尽够简单了，毕竟Hexo本来也就是一个快速的blog搭建工具，因此也就不再写完整教程了。下面我会写一些针对于当前版本的Hexo以及最受欢迎的主题Next的一些tips，主要内容如下：</p>
+<ul>
+<li>搭建一个Hexo&amp;Next的最小博客系统</li>
+<li>Next主题美化心得</li>
+<li>域名绑定</li>
+<li>关于博客图片</li>
+<li>备份维护的Tips</li>
+</ul>
+<hr>
+<h2 id="搭建一个Hexo-amp-Next的最小博客系统"><a href="#搭建一个Hexo-amp-Next的最小博客系统" class="headerlink" title="搭建一个Hexo&amp;Next的最小博客系统"></a>搭建一个Hexo&amp;Next的最小博客系统</h2><p><strong>论最小系统的重要性。</strong>对于任何一个需要搭建的系统，无论是博客还是论坛，我都推荐新手先根据教程搭建一个最小系统。最小系统顾名思义，就是一个满足需求的最小化的系统。举个栗子，比如你需要搭建Wordpress，这个时候我们就可以先搭建一个最基本的Wordpress博客，即可以进行内容的发布和管理，然后再根据自己的需求去进行主题的美化和插件安装等等，这样操作会更具有条理性。完全没有必要第一次就期望能够顺利搭建完成，直接用于实际生产应用环境。</p>
+<p>再看Hexo，Hexo搭建的过程就是单纯的配置文件形式和命令行。有些教程写的非常长，从安装环境、本地部署、美化、第三方插件写到域名、SEO优化等等。内容太多，太复杂，这对于新手就显得不那么友好了。因此在这里，我仅仅描述了如何搭建一个Hexo&amp;Next的最小博客系统，不夹杂其余一些美化优化等操作，待大家玩熟了之后，再进行一些高级的配置。最小博客系统的搭建分为以下几个步骤：</p>
+<ol>
+<li>本地环境搭建（Git、Node.js） </li>
+<li>Github创建博客仓库，初始化GitHub Pages</li>
+<li>本地搭建Hexo博客</li>
+<li>部署到GitHub Pages</li>
+<li>. 主题美化</li>
+</ol>
+<p><strong>Attention：</strong> 这里未包含域名绑定的过程，因为无论GitHub Pages还是Coding Pages，都可以通过用户名自带的域名访问，如果购买了域名的，可参考附录进行域名绑定。</p>
+<p>1-4步具体的过程可参考<a href="http://crazymilk.github.io/2015/12/28/GitHub-Pages-Hexo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2/" target="_blank" rel="noopener">GitHub Pages + Hexo搭建博客</a>，按照这篇博客的步骤走，基本上几分钟时间就可以搭建一个默认主题的Hexo博客了。</p>
+<p>默认的主题并不是那么好看，这里我们选择目前最流行的Hexo Next主题，该主题非常简洁，并且有非常详细的配置文档，对于不愿意花大时间在博客美化上的人来说，是极好的。</p>
+<p>主题应用具体可参考<a href="http://theme-next.iissnan.com/getting-started.html#theme-settings" target="_blank" rel="noopener">Next官方文档</a>，我们需要根据文档配置一下信息：</p>
+<ol>
+<li>Scheme</li>
+<li>语言</li>
+<li>菜单，包括标签、分类、关于等</li>
+<li>作者昵称和站点描述</li>
+</ol>
+<p>经过以上几个步骤的配置，一个基本的个人博客就已经成型了，可以在上面进行内容的发布，这也就是上面所提到的一个最小系统。</p>
+<h2 id="Next主题美化心得"><a href="#Next主题美化心得" class="headerlink" title="Next主题美化心得"></a>Next主题美化心得</h2><p>搭建完最小系统的Hexo博客，其实已经可以正常工作了。但是Next主题给了我们更多DIY的空间，根据官方配置文档，我们还能配置例如评论、统计分析、搜索等其他一系列的功能。大家可以根据自己的喜好进行配置。</p>
+<p>但是，需要提出的就是，Hexo本身主打的是轻量级博客系统，过多的美化可能会导致博客的卡顿。因此，我只推荐以下个性化设置：</p>
+<ul>
+<li><strong>Github banner</strong><br>在Next6.0之后，配置自带<code>github_banner</code>，只需要在后面添加自己的github地址即可，例如：<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">github_banner: http<span class="variable">s:</span>//github.<span class="keyword">com</span>/maoqyhz || Follow <span class="keyword">me</span> <span class="keyword">on</span> GitHub</span><br></pre></td></tr></table></figure></li>
+<li><strong>博文置顶</strong></li>
+<li><strong>评论系统和单篇文章统计</strong><br>这里把这两部分何在一起，主要他们都用到了LeanCloud服务。LeanCloud是一个后端服务商，我们在上面注册后，就可以免费使用其统计和评论的服务。当然，据说<code>leancloud_visitors</code>有一个安全问题，对此比较敏感的可通过<a href="https://leaferx.online/2018/02/11/lc-security/" target="_blank" rel="noopener">Leancloud访客统计插件重大安全漏洞修复指南</a>进行手动修复，也可忽略。</li>
+<li><strong>全站统计</strong></li>
+<li><strong>开启本地搜索</strong></li>
+<li><strong>博客字数统计和阅读所需时间</strong><br>旧版的next主题使用的是<code>hexo-wordcount</code>插件，新版已替换成<code>hexo-symbols-count-time</code></li>
+</ul>
+<p>上述的美化配置，均可在Next官方文档和<a href="https://zhuanlan.zhihu.com/p/28128674" target="_blank" rel="noopener">hexo的next主题个性化教程:打造炫酷网站</a>中找到。</p>
+<h2 id="域名绑定"><a href="#域名绑定" class="headerlink" title="域名绑定"></a>域名绑定</h2><p>github page自带二级域名，同时也支持绑定个人域名。</p>
+<p>域名其实分为注册和绑定两部分。</p>
+<p>第一，需要去域名服务商哪里购买域名，国内：万网、Dnspod；国外选择余地就更大了，具体的价格可参考<a href="https://www.domcomp.com/" target="_blank" rel="noopener">www.domcomp.com</a>。博主是在namesilo里买的，价格相对比较便宜。</p>
+<p>第二，域名绑定。如果是像博主这样在国外服务商买的域名，一般就不使用其域名解析服务（NS）了，可以换成国内的Dnspod。<strong>然后设置别名即可，不需要添加A记录。</strong></p>
+<p>具体操作如下：</p>
+<ol>
+<li>更换域名服务商的NS，以namesilo为例。</li>
+</ol>
+<p><img src="manage.png" alt=""></p>
+<p>![](change ns.png)</p>
+<ol start="2">
+<li>在Dnspod中添加域名和记录。</li>
+</ol>
+<p><img src="dnspod.png" alt=""></p>
+<ol start="3">
+<li>在博客源文件<code>source/</code>目录下创建一个无文件类型的文件<code>CNAME</code>，并添加自己的域名，例如<code>furur.xyz</code>。更新部署到github上。</li>
+</ol>
+<p>由于NS修改需要时间，过一段时间可以刷新下网页看看。</p>
+<h2 id="关于博客图片"><a href="#关于博客图片" class="headerlink" title="关于博客图片"></a>关于博客图片</h2><p>Hexo博客搭建完后，大多会选择部署到Github Pages或者Coding Pages上去，这时候由于空间问题，大家可能会对于博客中的图片放哪的问题存在困惑。网上大多数的人都推荐使用各种图床或者云服务（七牛云）。但是个人觉得如果不是嫌图片加载的速度过慢，其实直接上传图片到github就可以了。Github Pages每人的空间有100M，毕竟技术博客中包含的图片有限，实在有大图，可以先进行在线压缩。一般一篇博客1M都不到，待有恒心写满100篇博客在说吧。上传图片，需要将Hexo配置文件中的<code>post_asset_folder</code>设为true，然后在博客创建时，会在source文件夹下创建于博客同名的文件夹。在里面放图片，博客中直接引用文件名即可。</p>
+<h2 id="备份维护的Tips"><a href="#备份维护的Tips" class="headerlink" title="备份维护的Tips"></a>备份维护的Tips</h2><p>Hexo博客需要本地静态部署后，push到服务器上去。善于思考的，应该会想到如果换电脑了，应该如何继续写博客部署到服务器上去呢？具体可参考<a href="https://www.zhihu.com/question/21193762" target="_blank" rel="noopener">使用hexo，如果换了电脑怎么更新博客？</a></p>
+<p>其实原理很简单，知乎中提到的这么多方法，无非就是将除了部署生成的文件之外，其余的文件夹以及配置文件都单独保存好即可。保存的方法自然有很多，可以新建一个源代码分支，也可单独用云服务进行备份。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>对于coding相关的人来说，Hexo的搭建可以说是非常简单了，加上网上资料丰富，大家可以随意折腾<del>~</del></p>
+<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><h3 id="教程列表"><a href="#教程列表" class="headerlink" title="教程列表"></a>教程列表</h3><ul>
+<li><a href="http://crazymilk.github.io/2015/12/28/GitHub-Pages-Hexo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2/" target="_blank" rel="noopener">GitHub Pages + Hexo搭建博客</a></li>
+<li><a href="https://thief.one/2017/03/03/Hexo%E6%90%AD%E5%BB%BA%E5%8D%9A%E5%AE%A2%E6%95%99%E7%A8%8B/" target="_blank" rel="noopener">Hexo搭建博客教程</a></li>
+<li><a href="http://jmyblog.top/Hexo-GithubPages-CodingPages搭建自己的个人博客/" target="_blank" rel="noopener">Hexo+GithubPages&amp;CodingPages搭建自己的个人博客</a></li>
+</ul>
+<h3 id="备份维护"><a href="#备份维护" class="headerlink" title="备份维护"></a>备份维护</h3><ul>
+<li><a href="https://www.zhihu.com/question/21193762" target="_blank" rel="noopener">使用hexo，如果换了电脑怎么更新博客？</a></li>
+</ul>
+<h3 id="主题美化"><a href="#主题美化" class="headerlink" title="主题美化"></a>主题美化</h3><ul>
+<li><a href="https://zhuanlan.zhihu.com/p/28128674" target="_blank" rel="noopener">hexo的next主题个性化教程:打造炫酷网站</a></li>
+<li><a href="https://notes.wanghao.work/2015-10-21-%E4%B8%BANexT%E4%B8%BB%E9%A2%98%E6%B7%BB%E5%8A%A0%E6%96%87%E7%AB%A0%E9%98%85%E8%AF%BB%E9%87%8F%E7%BB%9F%E8%AE%A1%E5%8A%9F%E8%83%BD.html#%E9%85%8D%E7%BD%AELeanCloud" target="_blank" rel="noopener">为NexT主题添加文章阅读量统计功能</a></li>
+<li><a href="https://sobaigu.com/hexo-post-stick-to-top.html" target="_blank" rel="noopener">Hexo博客添加文章置顶功能</a></li>
+</ul>
+<h3 id="插件"><a href="#插件" class="headerlink" title="插件"></a>插件</h3><ul>
+<li><a href="https://github.com/coneycode/hexo-git-backup" target="_blank" rel="noopener">hexo-git-backup</a></li>
+<li><a href="https://github.com/jaredly/hexo-admin" target="_blank" rel="noopener">hexo-admin</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="Fururur 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Fururur
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://furur.xyz/2018/05/19/hexo-build-blog.html" title="Hexo 博客搭建以及 Next 主题美化的经验之谈">https://furur.xyz/2018/05/19/hexo-build-blog.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Hexo/" rel="tag"># Hexo</a>
+              <a href="/tags/Hexo-Next/" rel="tag"># Hexo Next</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2018/05/31/start-blog.html" rel="next" title="『风物长宜放眼量』——序">
+      『风物长宜放眼量』——序 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+  
+    <div class="comments" id="comments">
+        
+<script src="https://utteranc.es/client.js"
+        repo="maoqyhz/blog-comments"
+        issue-term="pathname"
+        label="Comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+    </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#搭建一个Hexo-amp-Next的最小博客系统"><span class="nav-text">搭建一个Hexo&amp;Next的最小博客系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Next主题美化心得"><span class="nav-text">Next主题美化心得</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#域名绑定"><span class="nav-text">域名绑定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关于博客图片"><span class="nav-text">关于博客图片</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#备份维护的Tips"><span class="nav-text">备份维护的Tips</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#附录"><span class="nav-text">附录</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#教程列表"><span class="nav-text">教程列表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#备份维护"><span class="nav-text">备份维护</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#主题美化"><span class="nav-text">主题美化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#插件"><span class="nav-text">插件</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Fururur"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Fururur</p>
+  <div class="site-description" itemprop="description">原来你也在这里</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/maoqyhz" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;maoqyhz" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/3160001350" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;3160001350" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.instagram.com/_fururur" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;_fururur" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://www.cnblogs.com/Sinte-Beuve" title="博客园 → http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank"><i class="fa fa-fw fa-wordpress"></i>博客园</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://www.cnblogs.com/Sinte-Beuve" title="http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank">我的博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://fucknmb.com/" title="http:&#x2F;&#x2F;fucknmb.com" rel="noopener" target="_blank">区长</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://draveness.me/" title="https:&#x2F;&#x2F;draveness.me&#x2F;" rel="noopener" target="_blank">面向信仰编程</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://blog.didispace.com/spring-boot-learning-1x/" title="http:&#x2F;&#x2F;blog.didispace.com&#x2F;spring-boot-learning-1x&#x2F;" rel="noopener" target="_blank">程序猿DD</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnkirito.moe/" title="https:&#x2F;&#x2F;www.cnkirito.moe&#x2F;" rel="noopener" target="_blank">徐靖峰|个人博客</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://imququ.com/post/series.html" title="https:&#x2F;&#x2F;imququ.com&#x2F;post&#x2F;series.html" rel="noopener" target="_blank">Jerry Qu的小站</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://spring.hhui.top/" title="http:&#x2F;&#x2F;spring.hhui.top&#x2F;" rel="noopener" target="_blank">一灰灰Blog</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Fururur</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

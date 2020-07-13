@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/fur.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"furur.xyz","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="原文地址：An easier path to functional programming in Java 原文作者：Venkat Subramaniam 译文出自：掘金翻译计划">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[译]通往 Java 函数式编程的捷径">
+<meta property="og:url" content="https://furur.xyz/2018/06/16/java-functional-programming.html">
+<meta property="og:site_name" content="Fururur.">
+<meta property="og:description" content="原文地址：An easier path to functional programming in Java 原文作者：Venkat Subramaniam 译文出自：掘金翻译计划">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.ibm.com/developerworks/library/j-java8idioms1/fig1.png">
+<meta property="article:published_time" content="2018-06-16T06:17:28.000Z">
+<meta property="article:modified_time" content="2020-07-13T08:27:07.497Z">
+<meta property="article:author" content="Fururur">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Functional Programming">
+<meta property="article:tag" content="Translation">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.ibm.com/developerworks/library/j-java8idioms1/fig1.png">
+
+<link rel="canonical" href="https://furur.xyz/2018/06/16/java-functional-programming.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>[译]通往 Java 函数式编程的捷径 | Fururur.</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?7889dcbf75b5eb88d87b678f31d5e900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Fururur.</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/maoqyhz" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://furur.xyz/2018/06/16/java-functional-programming.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Fururur">
+      <meta itemprop="description" content="原来你也在这里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Fururur.">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          [译]通往 Java 函数式编程的捷径
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-06-16 14:17:28" itemprop="dateCreated datePublished" datetime="2018-06-16T14:17:28+08:00">2018-06-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-13 16:27:07" itemprop="dateModified" datetime="2020-07-13T16:27:07+08:00">2020-07-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<ul>
+<li>原文地址：<a href="https://www.ibm.com/developerworks/library/j-java8idioms1/" target="_blank" rel="noopener">An easier path to functional programming in Java</a></li>
+<li>原文作者：<a href="https://developer.ibm.com/author/venkats/" target="_blank" rel="noopener">Venkat Subramaniam</a></li>
+<li>译文出自：<a href="https://github.com/xitu/gold-miner" target="_blank" rel="noopener">掘金翻译计划</a></li>
+</ul>
+</blockquote>
+<a id="more"></a>
+
+<h2 id="以声明式的思想在你的-Java-程序中使用函数式编程技术"><a href="#以声明式的思想在你的-Java-程序中使用函数式编程技术" class="headerlink" title="以声明式的思想在你的 Java 程序中使用函数式编程技术"></a>以声明式的思想在你的 Java 程序中使用函数式编程技术</h2><p>Java™ 开发人员习惯于面向命令式和面向对象的编程，因为这些特性自 Java 语言首次发布以来一直受到支持。在 Java 8 中，我们获得了一组新的强大的函数式特性和语法。函数式编程已经存在了数十年，与面向对象编程相比，函数式编程通常更加简洁和达意，不易出错，并且更易于并行化。所以有很好的理由将函数式编程特性引入到 Java 程序中。尽管如此，在使用函数式特性进行编程时，就如何设计你的代码这一点上需要进行一些改变。</p>
+<p><strong>关于本文</strong></p>
+<p>Java 8 是 Java 语言自诞生以来最重要的更新，它包含如此多的新特性，以至于你可能想知道应该从哪开始了解它。在本系列中，身为作家和教育家的 Venkat Subramaniam 提供了一种符合 Java 语言习惯的 Java 8 学习方式。邀请你进行简短的探索后，重新思考你认为理所当然的 Java 一贯用法和规范，同时逐渐将新技术和语法集成到你的程序中去。</p>
+<p>我认为，以声明式的思想而不是命令式的思想来编程，可以更加轻松地向更加函数化的编程风格过渡。在 <a href="http://www.ibm.com/developerworks/library/?series_title_by=Java+8+idioms" target="_blank" rel="noopener"><em>Java 8 idioms</em> series</a> 这个系列的第一篇文章中，我解释了命令式、声明式和函数式编程风格之间的异同。然后，我将向你展示如何使用声明式的思想逐渐将函数式编程技术集成到你的 Java 程序中。</p>
+<h2 id="命令式风格（面向过程）"><a href="#命令式风格（面向过程）" class="headerlink" title="命令式风格（面向过程）"></a>命令式风格（面向过程）</h2><p>受命令式编程风格训练的开发者习惯于告诉程序需要做什么以及如何去做。这里是一个简单的例子：</p>
+<p><b id="listing1">清单 1. 以命令式风格编写的 findNemo 方法</b></p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FindNemo</span> &#123;</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(<span class="keyword">String</span>[] args)</span> </span>&#123;</span><br><span class="line">    List&lt;<span class="keyword">String</span>&gt; names = </span><br><span class="line">      Arrays.asList(<span class="string">"Dory"</span>, <span class="string">"Gill"</span>, <span class="string">"Bruce"</span>, <span class="string">"Nemo"</span>, <span class="string">"Darla"</span>, <span class="string">"Marlin"</span>, <span class="string">"Jacques"</span>);</span><br><span class="line"></span><br><span class="line">    findNemo(names);</span><br><span class="line">  &#125;                 </span><br><span class="line">  </span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">findNemo</span><span class="params">(List&lt;<span class="keyword">String</span>&gt; names)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">boolean</span> found = <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">String</span> name : names) &#123;</span><br><span class="line">      <span class="keyword">if</span>(name.equals(<span class="string">"Nemo"</span>)) &#123;</span><br><span class="line">        found = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span>(found)</span><br><span class="line">      System.out.<span class="built_in">println</span>(<span class="string">"Found Nemo"</span>);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">      System.out.<span class="built_in">println</span>(<span class="string">"Sorry, Nemo not found"</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>方法 <code>findNemo()</code> 首先初始化一个可变变量 <strong>flag</strong>，也称为垃圾变量（garbage variable）。开发者经常会给予某些变量一个临时性的名字，例如 <code>f</code>、<code>t</code>、<code>temp</code> 以表明它们根本不应该存在。在本例中，这些变量应该被命名为 <code>found</code>。</p>
+<p>接下来，程序会循环遍历给定的 <code>names</code> 列表，每次都会判断当前遍历的值是否和待匹配值相同。在这个例子中，待匹配值为 <code>Nemo</code>，如果遍历到的值匹配，程序会将标志位设为 <code>true</code>，并执行流程控制语句 “break” 跳出循环。</p>
+<p>这是对于广大 Java 开发者最熟悉的编程风格 —— 命令式风格的程序，因此你可以定义程序的每一步：你告诉程序遍历每一个元素，和待匹配值进行比较，设置标志位，以及跳出循环。命令式编程风格让你可以完全控制程序，有的时候这是一件好事。但是，换个角度来看，你做了很多机器可以独立完成的工作，这势必导致生产力下降。因此，有的时候，你可以通过少做事来提高生产力。</p>
+<h2 id="声明式风格"><a href="#声明式风格" class="headerlink" title="声明式风格"></a>声明式风格</h2><p>声明式编程意味着你仍然需要告诉程序需要做什么，但是你可以将实现细节留给底层函数库。让我们看看使用声明式编程风格重写<a href="#listing1">清单 1</a> 中的 <code>findNemo</code> 方法时会发生什么：</p>
+<p><strong>清单 2. 以声明式风格编写的 findNemo 方法</strong></p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">findNemo</span><span class="params">(List&lt;<span class="keyword">String</span>&gt; names)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span>(names.contains(<span class="string">"Nemo"</span>))</span><br><span class="line">    System.out.<span class="built_in">println</span>(<span class="string">"Found Nemo"</span>);</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    System.out.<span class="built_in">println</span>(<span class="string">"Sorry, Nemo not found"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先需要注意的是，此版本中没有任何垃圾变量。你也不需要在遍历集合中浪费精力。相反，你只需要使用内建的 <code>contains()</code> 方法来完成这项工作。你仍然要告诉程序需要做什么，集合中是否包含我们正在寻找的值，但此时你已经将细节交给底层的方法来实现了。 </p>
+<p>在命令式编程风格的例子中，你控制了遍历的流程，程序可以完全按照指令进行；在声明式的例子中，只要程序能够完成工作，你完全不需要关注它是如何工作的。<code>contains()</code> 方法的实现可能会有所不同，但只要结果符合你的期望，你就会对此感到满意。更少的工作能够得到相同的结果。</p>
+<p>训练自己以声明式的编程风格来进行思考将更加轻松地向更加函数化的编程风格过渡。原因在于，函数式编程风格是建立在声明式风格之上的。声明式风格的思维可以让你逐渐从命令式编程转换到函数式编程。</p>
+<h2 id="函数式编程风格"><a href="#函数式编程风格" class="headerlink" title="函数式编程风格"></a>函数式编程风格</h2><p>虽然函数式风格的编程总是声明式的，但是简单地使用声明式风格编程并不等同与函数式编程。这是因为函数式编程时将声明式编程和高阶函数结合在了一起。图 1 显示了命令式，声明式和函数式编程风格之间的关系。</p>
+<p><strong>图 1. 命令式、声明式和函数式编程风格之间的关系</strong></p>
+<p><img src="https://www.ibm.com/developerworks/library/j-java8idioms1/fig1.png" alt="A logic diagram showing how the imperative, declarative, and functional programming styles differ and overlap."></p>
+<h3 id="Java-中的高阶函数"><a href="#Java-中的高阶函数" class="headerlink" title="Java 中的高阶函数"></a>Java 中的高阶函数</h3><p>在 Java 中，你可以将对象传递给方法，在方法中创建对象，也可以从方法中返回对象。同时你也可以用函数做相同的事情。也就是说，你可以将函数传递给方法，在方法中创建函数，也可以从方法中返回函数。</p>
+<p>在这种情况下，<strong>方法</strong>是类的一部分（静态或实例），但是函数可以是方法的一部分，并且不能有意地与类或实例相关联。一个可以接收、创建、或者返回函数的方法或函数称之为<strong>高阶函数</strong>。</p>
+<h2 id="一个函数式编程的例子"><a href="#一个函数式编程的例子" class="headerlink" title="一个函数式编程的例子"></a>一个函数式编程的例子</h2><p>采用新的编程风格需要改变你对程序的看法。这是一个从简单例子的练习开始，到构建更加复杂程序的过程。</p>
+<p><b id="listing3">清单 3. 命令式编程风格下的 Map</b></p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UseMap</span> &#123;</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(<span class="keyword">String</span>[] args)</span> </span>&#123;</span><br><span class="line">    Map&lt;<span class="keyword">String</span>, Integer&gt; pageVisits = <span class="keyword">new</span> HashMap&lt;&gt;();            </span><br><span class="line">    </span><br><span class="line">    <span class="keyword">String</span> page = <span class="string">"https://agiledeveloper.com"</span>;</span><br><span class="line">    </span><br><span class="line">    incrementPageVisit(pageVisits, page);</span><br><span class="line">    incrementPageVisit(pageVisits, page);</span><br><span class="line">    </span><br><span class="line">    System.out.<span class="built_in">println</span>(pageVisits.<span class="built_in">get</span>(page));</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">incrementPageVisit</span><span class="params">(Map&lt;<span class="keyword">String</span>, Integer&gt; pageVisits, <span class="keyword">String</span> page)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span>(!pageVisits.containsKey(page)) &#123;</span><br><span class="line">       pageVisits.<span class="built_in">put</span>(page, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    pageVisits.<span class="built_in">put</span>(page, pageVisits.<span class="built_in">get</span>(page) + <span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在<a href="#listing3">清单 3</a> 中，<code>main()</code> 函数创建了一个 <code>HashMap</code> 来保存网站访问次数。同时，<code>incrementPageVisit()</code> 方法增加了每次访问给定页面的计数。我们将聚焦此方法。</p>
+<p>以命令式编程风格写的 <code>incrementPageVisit()</code> 方法：它的工作是为给定页面增加一个计数，并存储在 <code>Map</code> 中。该方法不知道给定页面是否已经有计数值，所以会先检查计数值是否存在，如果不存在，会为该页面插入一个值为”0”的计数值。然后再获取该计数值，递增它，并将新的计数值存储在 <code>Map</code> 中。</p>
+<p>以声明式的方式思考需要你将方法的设计从 “how” 转变到 “what”。当 <code>incrementPageVisit()</code> 方法被调用时，你需要将给定的页面计数值初始化为 1 或者计数值加 1。这就是 <strong>what</strong>。</p>
+<p>因为你是通过声明式编程的，那么下一步就是在 JDK 库中寻找可以完成这项工作且实现了 <code>Map</code> 接口的方法。换言之，你需要找到一个知道<strong>如何</strong>完成你指定任务的内建方法。</p>
+<p>事实证明 <code>merge()</code> 方法非常适合你的而目的。清单 4 使用新的声明式方法对<a href="#listing3">清单 3</a> 中的 <code>incrementPageVisit()</code> 方法进行修改。但是，在这种情况下，你不仅仅只是选择更智能的方法来写出更具声明性风格的代码，因为 <code>merge()</code> 是一个更高阶的函数。所以说，新的代码实际上是一个体现函数式风格的很好的例子：</p>
+<p><b id="listing4">清单 4. 函数式编程风格下的 Map</b></p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">incrementPageVisit</span><span class="params">(Map&lt;<span class="keyword">String</span>, Integer&gt; pageVisits, <span class="keyword">String</span> page)</span> </span>&#123;</span><br><span class="line">    pageVisits.merge(page, <span class="number">1</span>, (oldValue, value) -&gt; oldValue + value); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在清单 4 中，<code>page</code> 作为第一个参数传递给 <code>merge()</code>：map 中键对应的值将会被更新。第二个参数作为初始值，<strong>如果</strong> <code>Map</code> 中不存在指定键的值，那么该值将会赋值给 <code>Map</code> 中键对应的值（在本例中为”1”）。第三个参数为一个 lambda 表达式，接受当前 <code>Map</code> 中键对应的值和该函数中第二个参数对应的值作为参数。lambda 表达式返回其参数的总和，实际上增加了计数值。（<strong>编者注</strong>：感谢 István Kovács 修正了代码错误）</p>
+<p>将<a href="#listing4">清单 4</a> 的 <code>incrementPageVisit()</code> 方法中的单行代码与<a href="#listing3">清单 3</a> 中的多行代码进行比较。虽然<a href="#listing4">清单 4</a> 中的程序是函数式编程风格的一个例子，但通过声明性地思想去思考问题帮助能够我们实现飞跃。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>在 Java 程序中采用函数式编程技术和语法有很多好处：代码更简洁，更富有表现力，移动部分更少，实现并行化更容易，并且通常比面向对象的代码更易理解。 目前面临的挑战是，如何将你的思维从绝大多数开发人员所熟悉的命令式编程风格转变为以声明式的方式进行思考。</p>
+<p>虽然函数式编程并没有那么简单或直接，但是你可以学习专注于你希望程序<strong>做什么</strong>而不是<strong>如何做</strong>这件事，来取得巨大的飞跃。通过允许底层函数库管理执行，你将逐渐直观地了解用于构建函数式编程模块的高阶函数。</p>
+<blockquote>
+<ul>
+<li>本文永久链接：<a href="https://github.com/xitu/gold-miner/blob/master/TODO1/an-easier-path-to-functional-programming-in-java.md" target="_blank" rel="noopener">https://github.com/xitu/gold-miner/blob/master/TODO1/an-easier-path-to-functional-programming-in-java.md</a></li>
+<li>译者：<a href="https://github.com/maoqyhz" target="_blank" rel="noopener">maoqyhz</a></li>
+<li>校对者：<a href="https://github.com/satansk" target="_blank" rel="noopener">satansk</a>、<a href="https://github.com/lihanxiang" target="_blank" rel="noopener">lihanxiang</a></li>
+<li>如果发现译文存在错误或其他需要改进的地方，欢迎到 <a href="https://github.com/xitu/gold-miner" target="_blank" rel="noopener">掘金翻译计划</a> 对译文进行修改并 PR，也可获得相应奖励积分。文章开头的 <strong>本文永久链接</strong> 即为本文在 GitHub 上的 MarkDown 链接。</li>
+</ul>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="Fururur 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Fururur
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://furur.xyz/2018/06/16/java-functional-programming.html" title="[译]通往 Java 函数式编程的捷径">https://furur.xyz/2018/06/16/java-functional-programming.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Functional-Programming/" rel="tag"># Functional Programming</a>
+              <a href="/tags/Translation/" rel="tag"># Translation</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/06/08/linear-algebra-in-deep-learning.html" rel="prev" title="[译]深度学习中所需的线性代数知识">
+      <i class="fa fa-chevron-left"></i> [译]深度学习中所需的线性代数知识
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/06/18/avoid-merge-branch-master-of.html" rel="next" title="Git push 时如何避免出现 "Merge branch 'master' of ..."">
+      Git push 时如何避免出现 "Merge branch 'master' of ..." <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+  
+    <div class="comments" id="comments">
+        
+<script src="https://utteranc.es/client.js"
+        repo="maoqyhz/blog-comments"
+        issue-term="pathname"
+        label="Comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+    </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#以声明式的思想在你的-Java-程序中使用函数式编程技术"><span class="nav-text">以声明式的思想在你的 Java 程序中使用函数式编程技术</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#命令式风格（面向过程）"><span class="nav-text">命令式风格（面向过程）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#声明式风格"><span class="nav-text">声明式风格</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#函数式编程风格"><span class="nav-text">函数式编程风格</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Java-中的高阶函数"><span class="nav-text">Java 中的高阶函数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一个函数式编程的例子"><span class="nav-text">一个函数式编程的例子</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Fururur"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Fururur</p>
+  <div class="site-description" itemprop="description">原来你也在这里</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/maoqyhz" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;maoqyhz" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/3160001350" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;3160001350" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.instagram.com/_fururur" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;_fururur" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://www.cnblogs.com/Sinte-Beuve" title="博客园 → http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank"><i class="fa fa-fw fa-wordpress"></i>博客园</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://www.cnblogs.com/Sinte-Beuve" title="http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank">我的博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://fucknmb.com/" title="http:&#x2F;&#x2F;fucknmb.com" rel="noopener" target="_blank">区长</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://draveness.me/" title="https:&#x2F;&#x2F;draveness.me&#x2F;" rel="noopener" target="_blank">面向信仰编程</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://blog.didispace.com/spring-boot-learning-1x/" title="http:&#x2F;&#x2F;blog.didispace.com&#x2F;spring-boot-learning-1x&#x2F;" rel="noopener" target="_blank">程序猿DD</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnkirito.moe/" title="https:&#x2F;&#x2F;www.cnkirito.moe&#x2F;" rel="noopener" target="_blank">徐靖峰|个人博客</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://imququ.com/post/series.html" title="https:&#x2F;&#x2F;imququ.com&#x2F;post&#x2F;series.html" rel="noopener" target="_blank">Jerry Qu的小站</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://spring.hhui.top/" title="http:&#x2F;&#x2F;spring.hhui.top&#x2F;" rel="noopener" target="_blank">一灰灰Blog</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Fururur</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

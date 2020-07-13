@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/fur.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"furur.xyz","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="在某些业务中可能会需要多次读取 HTTP 请求中的参数，比如说前置的 API 签名校验。这个时候我们可能会在拦截器或者过滤器中实现这个逻辑，但是尝试之后就会发现，如果在拦截器中通过 getInputStream() 读取过参数后，在 Controller 中就无法重复读取了，会抛出以下几种异常： 12HttpMessageNotReadableException: Required request">
+<meta property="og:type" content="article">
+<meta property="og:title" content="解决 HttpServletRequest 流数据不可重复读">
+<meta property="og:url" content="https://furur.xyz/2020/05/28/how-to-read-inputstream-twice.html">
+<meta property="og:site_name" content="Fururur.">
+<meta property="og:description" content="在某些业务中可能会需要多次读取 HTTP 请求中的参数，比如说前置的 API 签名校验。这个时候我们可能会在拦截器或者过滤器中实现这个逻辑，但是尝试之后就会发现，如果在拦截器中通过 getInputStream() 读取过参数后，在 Controller 中就无法重复读取了，会抛出以下几种异常： 12HttpMessageNotReadableException: Required request">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-28T11:22:26.000Z">
+<meta property="article:modified_time" content="2020-07-13T11:28:51.272Z">
+<meta property="article:author" content="Fururur">
+<meta property="article:tag" content="Spring Boot">
+<meta property="article:tag" content="IO流">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://furur.xyz/2020/05/28/how-to-read-inputstream-twice.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>解决 HttpServletRequest 流数据不可重复读 | Fururur.</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?7889dcbf75b5eb88d87b678f31d5e900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Fururur.</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/maoqyhz" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://furur.xyz/2020/05/28/how-to-read-inputstream-twice.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Fururur">
+      <meta itemprop="description" content="原来你也在这里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Fururur.">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          解决 HttpServletRequest 流数据不可重复读
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-28 19:22:26" itemprop="dateCreated datePublished" datetime="2020-05-28T19:22:26+08:00">2020-05-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-13 19:28:51" itemprop="dateModified" datetime="2020-07-13T19:28:51+08:00">2020-07-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在某些业务中可能会需要多次读取 HTTP 请求中的参数，比如说前置的 API 签名校验。这个时候我们可能会在拦截器或者过滤器中实现这个逻辑，但是尝试之后就会发现，如果在拦截器中通过 <code>getInputStream()</code> 读取过参数后，在 Controller 中就无法重复读取了，会抛出以下几种异常：</p>
+<figure class="highlight vhdl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">HttpMessageNotReadableException: Required request <span class="keyword">body</span> <span class="keyword">is</span> missing</span><br><span class="line">IllegalStateException: getInputStream() can<span class="symbol">'t</span> be called <span class="keyword">after</span> getReader()</span><br></pre></td></tr></table></figure>
+<p>这个时候需要我们将请求的数据缓存起来。本文会从 ServletRequest 数据封装原理开始详细讲讲如何解决这个问题。如果不想看原理的，可直接阅读 [最佳解决方案](# 最佳解决方案)。</p>
+<a id="more"></a>
+
+
+<h2 id="ServletRequest-数据封装原理"><a href="#ServletRequest-数据封装原理" class="headerlink" title="ServletRequest 数据封装原理"></a>ServletRequest 数据封装原理</h2><p>平时我们接受 HTTP 请求的参数时，基本是通过 SpringMVC 的包装。</p>
+<ul>
+<li>POST form-data 参数时，直接用实体类，或者直接在 Controller 的方法上把参数填上就可以了，手动则可以通过 <code>request.getParameter()</code> 来获取。</li>
+<li>POST json 时，会在实体类上添加 <code>@RequestBody</code> 参数或者直接调用 <code>request.getInputStream()</code> 获取流数据。</li>
+</ul>
+<p>我们可以发现在获取不同数据格式的数据时调用的方法是不同的，但是阅读源码可以发现，其实底层他们的数据来源都是一样的，只是 SpringMVC 帮我们做了一下处理。下面我们就来讲讲 ServletRequest 数据封装的原理。</p>
+<p>实际上我们通过 HTTP 传输的参数都会存在 Request 对象的 InputStream 中，这个 Request 对象也就是 ServletRequest 最终的实现，是由 tomcat 提供的。然后针对于不同的数据格式，会在不同的时刻对 InputStream 中的数据进行封装。</p>
+<h3 id="Spring-MVC-对不同类型数据的封装"><a href="#Spring-MVC-对不同类型数据的封装" class="headerlink" title="Spring MVC 对不同类型数据的封装"></a>Spring MVC 对不同类型数据的封装</h3><ul>
+<li><p><strong>GET 请求的数据一般是 Query String，直接在 url 的后面，不需要特殊处理</strong></p>
+</li>
+<li><p><strong>通过例如 POST、PUT 发送 <code>multipart/form-data</code> 格式的数据</strong></p>
+</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 源码中适当去除无关代码</span></span><br><span class="line"><span class="comment">// 对于这类数据，SpringMVC 在 DispatchServlet 的 doDispatch() 方法中就会进行处理。具体处理流程如下：</span></span><br><span class="line"><span class="comment">// org.springframework.web.servlet.DispatcherServlet.java</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">doDispatch</span><span class="params">(HttpServletRequest request, HttpServletResponse response)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    HttpServletRequest processedRequest = request;</span><br><span class="line">    HandlerExecutionChain mappedHandler = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">boolean</span> multipartRequestParsed = <span class="keyword">false</span>;</span><br><span class="line">    WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);</span><br><span class="line">    processedRequest = checkMultipart(request);</span><br><span class="line">    multipartRequestParsed = (processedRequest != request);</span><br><span class="line">    <span class="comment">// Determine handler for the current request.</span></span><br><span class="line">    <span class="comment">// other code...</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 1. 调用 checkMultipart(request)，当前请求的数据类型是否为 multipart/form-data</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> HttpServletRequest <span class="title">checkMultipart</span><span class="params">(HttpServletRequest request)</span> <span class="keyword">throws</span> MultipartException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>.multipartResolver != <span class="keyword">null</span> &amp;&amp; <span class="keyword">this</span>.multipartResolver.isMultipart(request)) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">this</span>.multipartResolver.resolveMultipart(request);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> request;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//2. 如果是，调用 multipartResolver 的 resolveMultipart(request)，返回一个 StandardMultipartHttpServletRequest 对象。</span></span><br><span class="line"><span class="comment">// org.springframework.web.multipart.support.StandardMultipartHttpServletRequest.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">StandardMultipartHttpServletRequest</span><span class="params">(HttpServletRequest request)</span> <span class="keyword">throws</span> MultipartException </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>(request, <span class="keyword">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">StandardMultipartHttpServletRequest</span><span class="params">(HttpServletRequest request, <span class="keyword">boolean</span> lazyParsing)</span> <span class="keyword">throws</span> MultipartException </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>(request);</span><br><span class="line">    <span class="keyword">if</span> (!lazyParsing) &#123;</span><br><span class="line">        parseRequest(request);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 3. 在构造 StandardMultipartHttpServletRequest 对象时，会调用 parseRequest(request)，将 InputStream 中是数据流进行进一步的封装。</span></span><br><span class="line"><span class="comment">// 不贴源码了，主要是对 form-data 数据的封装，包含字段和文件。</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>通过例如 POST、PUT 发送 <code>application/x-www-form-urlencoded</code> 格式的数据</strong></li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 非 form-data 的数据，会存储在 HttpServletRequest 的 InputStream 中。</span></span><br><span class="line"><span class="comment">// 在第一次调用 getParameterNames() 或 getParameter() 时,</span></span><br><span class="line"><span class="comment">// 会调用 parseParameters() 方法对参数进行封装，从 InputStream 中读取数据，并封装到 Map 中。</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//org.apache.catalina.connector.Request.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">getParameter</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="keyword">this</span>.parametersParsed) &#123;</span><br><span class="line">        <span class="keyword">this</span>.parseParameters();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>.coyoteRequest.getParameters().getParameter(name);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>通过例如 POST、PUT 发送 <code>application/json</code> 格式的数据</strong></li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 数据会直接会存储在 HttpServletRequest 的 InputStream 中，通过 request.getInputStream() 或 getReader() 获取。</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="读取参数时出现的问题"><a href="#读取参数时出现的问题" class="headerlink" title="读取参数时出现的问题"></a>读取参数时出现的问题</h3><p>现在我们基本已经对 SpringMVC 是如何封装 HTTP 请求参数有了一定的认识。根据之前描述的，我们如果要在拦截器中和 Controller 中重复读取参数时，会出现以下异常：</p>
+<figure class="highlight vhdl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">HttpMessageNotReadableException: Required request <span class="keyword">body</span> <span class="keyword">is</span> missing</span><br><span class="line">IllegalStateException: getInputStream() can<span class="symbol">'t</span> be called <span class="keyword">after</span> getReader()</span><br></pre></td></tr></table></figure>
+
+<p>这是由于 InputStream 这个流数据的特殊性，在 Java 中读取 InputStream 数据时，内部是通过一个指针的移动来读取一个一个的字节数据的，当读完一遍后，这个指针并不会 reset，因此第二遍读的时候就会出现问题了。而之前讲了，HTTP 请求的参数也是封装在 Request 对象中的 InputStream 里，所以当第二次调用 <code>getInputStream()</code> 时会抛出上述异常。具体的问题可以细分成多种情况：</p>
+<ol>
+<li><strong>请求方式为 <code>multipart/form-data</code>，在拦截器中手动调用 <code>request.getInputStream()</code></strong></li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 上文讲了在 doDispatch() 时就会进行处理，因此这里会取不到值</span></span><br><span class="line">log.info(<span class="string">"input stream content: &#123;&#125;"</span>, <span class="keyword">new</span> String(StreamUtils.copyToByteArray(request.getInputStream())));</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><strong>请求方式为 <code>application/x-www-form-urlencoded</code>，在拦截器中手动调用 <code>request.getInputStream()</code></strong></li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 第 1 次可以取到值</span></span><br><span class="line">log.info(<span class="string">"input stream content: &#123;&#125;"</span>, <span class="keyword">new</span> String(StreamUtils.copyToByteArray(request.getInputStream())));</span><br><span class="line"><span class="comment">// 第一次执行 getParameter() 会调用 parseParameters()，parseParameters 进一步调用 getInputStream()</span></span><br><span class="line"><span class="comment">// 这里就取不到值了</span></span><br><span class="line">log.info(<span class="string">"form-data param: &#123;&#125;"</span>, request.getParameter(<span class="string">"a"</span>));</span><br><span class="line">log.info(<span class="string">"form-data param: &#123;&#125;"</span>, request.getParameter(<span class="string">"b"</span>));</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li><strong>请求方式为 <code>application/json</code>，在拦截器中手动调用 <code>request.getInputStream()</code></strong></li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 第 1 次可以取到值</span></span><br><span class="line">log.info(<span class="string">"input stream content: &#123;&#125;"</span>, <span class="keyword">new</span> String(StreamUtils.copyToByteArray(request.getInputStream())));</span><br><span class="line"><span class="comment">// 之后再任何地方再调用 getInputStream() 都取不到值，会抛出异常</span></span><br></pre></td></tr></table></figure>
+
+<p>为了能够多次获取到 HTTP 请求的参数，我们需要将 InputStream 流中的数据缓存起来。</p>
+<h2 id="最佳解决方案"><a href="#最佳解决方案" class="headerlink" title="最佳解决方案"></a>最佳解决方案</h2><p>通过查阅资料，实际上 springframework 自己就有相应的 wrapper 来解决这个问题，在 <code>org.springframework.web.util</code> 包下有一个 <code>ContentCachingRequestWrapper</code> 的类。这个类的作用就是将 InputStream 缓存到 <code>ByteArrayOutputStream</code> 中，通过调用 ``getContentAsByteArray()` 实现流数据的可重复读取。</p>
+<blockquote>
+<figure class="highlight leaf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * &#123;@link javax.servlet.http.HttpServletRequest&#125; wrapper that caches all content read from</span><br><span class="line"> * the &#123;@linkplain <span class="function"><span class="keyword">#</span><span class="title">getInputStream</span><span class="params">()</span></span> input stream&#125; and &#123;@linkplain <span class="function"><span class="keyword">#</span><span class="title">getReader</span><span class="params">()</span></span> reader&#125;,</span><br><span class="line"> * and allows this content to be retrieved via a &#123;@link <span class="function"><span class="keyword">#</span><span class="title">getContentAsByteArray</span><span class="params">()</span></span> byte array&#125;.</span><br><span class="line"></span><br><span class="line"> * @see ContentCachingResponseWrapper</span><br><span class="line"> */</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>在使用上，只需要添加一个 Filter，将 <code>HttpServletRequest</code> 包装成 <code>ContentCachingResponseWrapper</code> 返回给拦截器和 Controller 就可以了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf</span>4j</span><br><span class="line"><span class="meta">@WebFilter</span>(urlPatterns = <span class="string">"/*"</span>)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CachingContentFilter</span> <span class="keyword">implements</span> <span class="title">Filter</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String FORM_CONTENT_TYPE = <span class="string">"multipart/form-data"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(FilterConfig filterConfig)</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doFilter</span><span class="params">(ServletRequest request, ServletResponse response,</span></span></span><br><span class="line"><span class="function"><span class="params">                         FilterChain chain)</span> <span class="keyword">throws</span> IOException, ServletException </span>&#123;</span><br><span class="line">        String contentType = request.getContentType();</span><br><span class="line">        <span class="keyword">if</span> (request <span class="keyword">instanceof</span> HttpServletRequest) &#123;</span><br><span class="line">            HttpServletRequest requestWrapper = <span class="keyword">new</span> ContentCachingRequestWrapper((HttpServletRequest) request);</span><br><span class="line">            <span class="comment">// #1</span></span><br><span class="line">            <span class="keyword">if</span> (contentType != <span class="keyword">null</span> &amp;&amp; contentType.contains(FORM_CONTENT_TYPE)) &#123;</span><br><span class="line">                chain.doFilter(request, response);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                chain.doFilter(requestWrapper, response);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        chain.doFilter(request, response);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">destroy</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 添加扫描 filter 注解</span></span><br><span class="line"><span class="meta">@ServletComponentScan</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SeedApplication</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SpringApplication.run(SeedApplication<span class="class">.<span class="keyword">class</span>, <span class="title">args</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在拦截器中，获取请求参数：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 流数据获取，比如 json</span></span><br><span class="line"><span class="comment">// #2</span></span><br><span class="line">String jsonBody = IOUtils.toString(wrapper.getContentAsByteArray(), <span class="string">"utf-8"</span>);</span><br><span class="line"><span class="comment">// form-data 和 urlencoded 数据</span></span><br><span class="line">String paramA = request.getParameter(<span class="string">"paramA"</span>);</span><br><span class="line">Map&lt;String,String[]&gt; params = request.getParameterMap();</span><br></pre></td></tr></table></figure>
+
+<p><strong>tips：</strong></p>
+<ol>
+<li>这里需要根据 contentType 做一下区分，遇到 <code>multipart/form-data</code> 数据时，不需要 wrapper，会直接通过 MultipartResolver 将参数封装成 Map，当然这也可以灵活的在拦截器中判断。</li>
+<li>wrapper 在具体使用中，我们可以使用 <code>getContentAsByteArray()</code> 来获取数据，并通过 <code>IOUtils</code> 转换成 String。尽量不使用 <code>request.getInputStream()</code>。因为虽然经过了包装，但是 InputStream 仍然只能读一次，而参数进入 Controller 的方法前 HttpMessageConverter 的参数转换需要调用这个方法，所以把它保留就可以了。</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>遇到这个问题的时候也参考了很多博客，有的使用了 ContentCachingRequestWrapper，也有的自己实现了一个 Wrapper。但是自己实现 Wrapper 的方案，多半是直接在 Wrapper 的构造函数中读取流数据到 byte[] 数据中去，这样在遇到 <code>multipart/form-data</code> 这种数据类型的时候就会出现问题了，因为包装在调用 MultipartResolver 之前执行，再次调用的时候就读不到数据了。</p>
+<p>所以博主又自己研究了一下 Spring 的源码，实现了这种方案，基本上可以处理多种通用的数据类型了。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ul>
+<li><a href="https://juejin.im/post/5d18c144518825559f46eeb3" target="_blank" rel="noopener">怎么重复使用 inputStream?</a></li>
+<li><a href="https://stackoverflow.com/questions/9501237/read-stream-twice" target="_blank" rel="noopener">Read stream twice</a></li>
+<li><a href="https://www.jianshu.com/p/ec1782e3ba04" target="_blank" rel="noopener">解决 request.getInputStream() 只能读取一次的问题</a></li>
+<li><a href="https://stackoverflow.com/questions/10210645/http-servlet-request-lose-params-from-post-body-after-read-it-once" target="_blank" rel="noopener">Http Servlet request lose params from POST body after read it once</a></li>
+<li><a href="https://juejin.im/post/5b4ac9b3e51d4519277b881b" target="_blank" rel="noopener">Spring Boot系列之二：一张图看懂请求处理流程</a><h2 id="附录代码"><a href="#附录代码" class="headerlink" title="附录代码"></a>附录代码</h2></li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.seed.common.config;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> lombok.extern.slf4j.Slf4j;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.util.ContentCachingRequestWrapper;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.servlet.*;</span><br><span class="line"><span class="keyword">import</span> javax.servlet.annotation.WebFilter;</span><br><span class="line"><span class="keyword">import</span> javax.servlet.http.HttpServletRequest;</span><br><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> Fururur</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@date</span> 2020/5/6-14:26</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Slf</span>4j</span><br><span class="line"><span class="meta">@WebFilter</span>(urlPatterns = <span class="string">"/*"</span>)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CachingContentFilter</span> <span class="keyword">implements</span> <span class="title">Filter</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String FORM_CONTENT_TYPE = <span class="string">"multipart/form-data"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(FilterConfig filterConfig)</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doFilter</span><span class="params">(ServletRequest request, ServletResponse response, FilterChain chain)</span> <span class="keyword">throws</span> IOException, ServletException </span>&#123;</span><br><span class="line">        String contentType = request.getContentType();</span><br><span class="line">        <span class="keyword">if</span> (request <span class="keyword">instanceof</span> HttpServletRequest) &#123;</span><br><span class="line">            HttpServletRequest requestWrapper = <span class="keyword">new</span> ContentCachingRequestWrapper((HttpServletRequest) request);</span><br><span class="line">            <span class="keyword">if</span> (contentType != <span class="keyword">null</span> &amp;&amp; contentType.contains(FORM_CONTENT_TYPE)) &#123;</span><br><span class="line">                chain.doFilter(request, response);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                chain.doFilter(requestWrapper, response);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        chain.doFilter(request, response);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">destroy</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.seed;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.SpringApplication;</span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;</span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.web.servlet.ServletComponentScan;</span><br><span class="line"></span><br><span class="line"><span class="meta">@ServletComponentScan</span></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SeedApplication</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SpringApplication.run(SeedApplication<span class="class">.<span class="keyword">class</span>, <span class="title">args</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RequestMapping</span>(<span class="string">"/query"</span>)</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">query</span><span class="params">(HttpServletRequest request)</span> </span>&#123;</span><br><span class="line">    ContentCachingRequestWrapper wrapper = <span class="keyword">new</span> ContentCachingRequestWrapper(request);</span><br><span class="line">    log.info(<span class="string">"&#123;&#125;"</span>, <span class="keyword">new</span> String(wrapper.getContentAsByteArray()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="Fururur 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Fururur
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://furur.xyz/2020/05/28/how-to-read-inputstream-twice.html" title="解决 HttpServletRequest 流数据不可重复读">https://furur.xyz/2020/05/28/how-to-read-inputstream-twice.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Spring-Boot/" rel="tag"># Spring Boot</a>
+              <a href="/tags/IO%E6%B5%81/" rel="tag"># IO流</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/02/21/task-queue-using-jvm-priority-thread-pool.html" rel="prev" title="JVM优先级线程池做任务队列">
+      <i class="fa fa-chevron-left"></i> JVM优先级线程池做任务队列
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/10/talk-about-transaction-isolation-in-springboot.html" rel="next" title="谈谈事务的隔离性及在开发中的应用">
+      谈谈事务的隔离性及在开发中的应用 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+  
+    <div class="comments" id="comments">
+        
+<script src="https://utteranc.es/client.js"
+        repo="maoqyhz/blog-comments"
+        issue-term="pathname"
+        label="Comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+    </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#ServletRequest-数据封装原理"><span class="nav-text">ServletRequest 数据封装原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Spring-MVC-对不同类型数据的封装"><span class="nav-text">Spring MVC 对不同类型数据的封装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取参数时出现的问题"><span class="nav-text">读取参数时出现的问题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#最佳解决方案"><span class="nav-text">最佳解决方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-text">参考文献</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#附录代码"><span class="nav-text">附录代码</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Fururur"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Fururur</p>
+  <div class="site-description" itemprop="description">原来你也在这里</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/maoqyhz" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;maoqyhz" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/3160001350" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;3160001350" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.instagram.com/_fururur" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;_fururur" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://www.cnblogs.com/Sinte-Beuve" title="博客园 → http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank"><i class="fa fa-fw fa-wordpress"></i>博客园</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://www.cnblogs.com/Sinte-Beuve" title="http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank">我的博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://fucknmb.com/" title="http:&#x2F;&#x2F;fucknmb.com" rel="noopener" target="_blank">区长</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://draveness.me/" title="https:&#x2F;&#x2F;draveness.me&#x2F;" rel="noopener" target="_blank">面向信仰编程</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://blog.didispace.com/spring-boot-learning-1x/" title="http:&#x2F;&#x2F;blog.didispace.com&#x2F;spring-boot-learning-1x&#x2F;" rel="noopener" target="_blank">程序猿DD</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnkirito.moe/" title="https:&#x2F;&#x2F;www.cnkirito.moe&#x2F;" rel="noopener" target="_blank">徐靖峰|个人博客</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://imququ.com/post/series.html" title="https:&#x2F;&#x2F;imququ.com&#x2F;post&#x2F;series.html" rel="noopener" target="_blank">Jerry Qu的小站</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://spring.hhui.top/" title="http:&#x2F;&#x2F;spring.hhui.top&#x2F;" rel="noopener" target="_blank">一灰灰Blog</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Fururur</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

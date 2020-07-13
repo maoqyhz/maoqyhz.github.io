@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/fur.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"furur.xyz","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="本文旨在厘清从Spring 到Spring Boot过程中，Bean装配的过程。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Bean装配，从Spring到Spring Boot">
+<meta property="og:url" content="https://furur.xyz/2019/08/21/bean-definition-from-spring-to-springboot.html">
+<meta property="og:site_name" content="Fururur.">
+<meta property="og:description" content="本文旨在厘清从Spring 到Spring Boot过程中，Bean装配的过程。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/bean-definition-from-spring-to-springboot/1566182027899.png">
+<meta property="og:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/bean-definition-from-spring-to-springboot/auto%20config.png">
+<meta property="article:published_time" content="2019-08-20T16:00:00.000Z">
+<meta property="article:modified_time" content="2020-07-13T08:27:07.490Z">
+<meta property="article:author" content="Fururur">
+<meta property="article:tag" content="Spring Boot">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="IoC">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/bean-definition-from-spring-to-springboot/1566182027899.png">
+
+<link rel="canonical" href="https://furur.xyz/2019/08/21/bean-definition-from-spring-to-springboot.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Bean装配，从Spring到Spring Boot | Fururur.</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?7889dcbf75b5eb88d87b678f31d5e900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Fururur.</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/maoqyhz" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://furur.xyz/2019/08/21/bean-definition-from-spring-to-springboot.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Fururur">
+      <meta itemprop="description" content="原来你也在这里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Fururur.">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Bean装配，从Spring到Spring Boot
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-08-21 00:00:00" itemprop="dateCreated datePublished" datetime="2019-08-21T00:00:00+08:00">2019-08-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-13 16:27:07" itemprop="dateModified" datetime="2020-07-13T16:27:07+08:00">2020-07-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本文旨在厘清从Spring 到Spring Boot过程中，Bean装配的过程。</p>
+<a id="more"></a>
+
+<p>自从用上Spring Boot，真的是一直用一直爽，已经完全无法直视之前Spring的代码了。<strong>约定大于配置</strong>的设计理念，使得其不需要太多的配置就能开箱即用。但是由于其便捷性，也就意味着掩盖了许多细节的部分，使得直接学习Spring Boot的开发者只会用，而不清楚内部的实现流程。最近刚好有空，重新回顾了一下Spring的相关内容，并且梳理了有关于Bean装配的一些用法，描述从过去的Spring开发，到现在的Spring开发 Boot在Bean装配上的变化和进步。</p>
+<h2 id="从SSM的集成谈到Bean的装配"><a href="#从SSM的集成谈到Bean的装配" class="headerlink" title="从SSM的集成谈到Bean的装配"></a>从SSM的集成谈到Bean的装配</h2><p>在学习初期，我想每个人都会去看一些博客，例如“Spring Spring MVC Mybatis整合”。一步一步整合出一个ssm项目。那个时候的我是没有什么概念的，完全就是，跟着步骤走，新建配置文件，把内容贴进来，然后run，一个基本的脚手架项目就出来了。回顾一下，基本是以下几步：</p>
+<ol>
+<li>建立maven web项目，并在pom.xml中添加依赖。</li>
+<li>配置web.xml，引入spring-*.xml配置文件。</li>
+<li>配置若干个spring-*.xml文件，例如自动扫包、静态资源映射、默认视图解析器、数据库连接池等等。</li>
+<li>写业务逻辑代码（dao、services、controller）</li>
+</ol>
+<p>后期可能需要用到文件上传了，再去xml中配置相关的节点。在开发中，基本也是遵循一个模式——三层架构，面向接口编程。类如果是Controller的就加一个@Controller；是Services的就加一个@Services注解，然后就可以愉快的写业务逻辑了。</p>
+<p>Spring是什么？那个时候的理解，像这样子配置一下，再加上几个注解，就是Spring。或者说，Spring就是这么用的。</p>
+<p>随着学习的深入，对Spring就有更深的理解了。<strong>在Spring当中，一切皆为Bean。</strong>可以说Bean是组成一个Spring应用的基本单位。Spring（这里是狭义的概念，指Spring Core）中最核心部分就是对Bean的管理。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">beans</span> <span class="attr">xmlns</span>=<span class="string">"http://www.springframework.org/schema/beans"</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xmlns:xsi</span>=<span class="string">"http://www.w3.org/2001/XMLSchema-instance"</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xmlns:context</span>=<span class="string">"http://www.springframework.org/schema/context"</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xmlns:mvc</span>=<span class="string">"http://www.springframework.org/schema/mvc"</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xsi:schemaLocation</span>=<span class="string">"http://www.springframework.org/schema/beans</span></span></span><br><span class="line"><span class="tag"><span class="string">                        http://www.springframework.org/schema/beans/spring-beans-3.2.xsd</span></span></span><br><span class="line"><span class="tag"><span class="string">                         http://www.springframework.org/schema/context</span></span></span><br><span class="line"><span class="tag"><span class="string">                        http://www.springframework.org/schema/context/spring-context-3.2.xsd</span></span></span><br><span class="line"><span class="tag"><span class="string">                        http://www.springframework.org/schema/mvc</span></span></span><br><span class="line"><span class="tag"><span class="string">                        http://www.springframework.org/schema/mvc/spring-mvc.xsd"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">context:annotation-config</span>/&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">context:component-scan</span> <span class="attr">base-package</span>=<span class="string">"com.zjut.ssm.controller"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">context:include-filter</span> <span class="attr">type</span>=<span class="string">"annotation"</span> <span class="attr">expression</span>=<span class="string">"org.springframework.stereotype.Controller"</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">context:component-scan</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">"defaultViewResolver"</span> <span class="attr">class</span>=<span class="string">"org.springframework.web.servlet.view.InternalResourceViewResolver"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"viewClass"</span> <span class="attr">value</span>=<span class="string">"org.springframework.web.servlet.view.JstlView"</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"prefix"</span> <span class="attr">value</span>=<span class="string">"/WEB-INF/views/"</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"suffix"</span> <span class="attr">value</span>=<span class="string">".jsp"</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">"multipartResolver"</span> <span class="attr">class</span>=<span class="string">"org.springframework.web.multipart.commons.CommonsMultipartResolver"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"maxUploadSize"</span> <span class="attr">value</span>=<span class="string">"20971500"</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"defaultEncoding"</span> <span class="attr">value</span>=<span class="string">"UTF-8"</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"resolveLazily"</span> <span class="attr">value</span>=<span class="string">"true"</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>让我们再次看一下Spring MVC的配置文件，除了一些参数外，还有两个bean节点，注入InternalResourceViewResolver来处理视图，注入CommonsMultipartResolver来处理文件上传。这个时候，如果需要集成Mybatis一起工作，类似的，注入相关的Bean就可以了。Mybatis最核心的Bean就是SqlSessionFactory，通过创建Session来进行数据库的操作。在不使用Spring时，可以通过加载XML，读入数据库信息，进行创建。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">String resource = <span class="string">"org/mybatis/example/mybatis-config.xml"</span>;</span><br><span class="line">InputStream inputStream = Resources.getResourceAsStream(resource);</span><br><span class="line">SqlSessionFactory sqlSessionFactory = <span class="keyword">new</span> SqlSessionFactoryBuilder().build(inputStream);</span><br></pre></td></tr></table></figure>
+
+<p>显然，上面的代码是不符合Spring的思想的。为了达到松耦合，高内聚，尽可能不直接去new一个实例，而是通过DI的方式，来注入bean，由Spring IoC容器进行管理。Mybatis官方给到一个MyBatis-Spring包，只需添加下面的Bean就可以组织Mybatis进行工作了（创建sqlSessionFactory，打开Session等工作），关于Mybatis的内容，这里不展开了。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">beans</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">"dataSource"</span> <span class="attr">class</span>=<span class="string">"com.mchange.v2.c3p0.ComboPooledDataSource"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"driverClass"</span> <span class="attr">value</span>=<span class="string">"$&#123;jdbc.driver&#125;"</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"jdbcUrl"</span> <span class="attr">value</span>=<span class="string">"$&#123;jdbc.url&#125;"</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"user"</span> <span class="attr">value</span>=<span class="string">"$&#123;jdbc.username&#125;"</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"password"</span> <span class="attr">value</span>=<span class="string">"$&#123;jdbc.password&#125;"</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">"sqlSessionFactory"</span> <span class="attr">class</span>=<span class="string">"org.mybatis.spring.SqlSessionFactoryBean"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"dataSource"</span> <span class="attr">ref</span>=<span class="string">"dataSource"</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"typeAliasesPackage"</span> <span class="attr">value</span>=<span class="string">""</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"mapperLocations"</span> <span class="attr">value</span>=<span class="string">"classpath:mapper/*.xml"</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">class</span>=<span class="string">"org.mybatis.spring.mapper.MapperScannerConfigurer"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"sqlSessionFactoryBeanName"</span> <span class="attr">value</span>=<span class="string">"sqlSessionFactory"</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">"basePackage"</span> <span class="attr">value</span>=<span class="string">""</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>那么，现在我们就知道了，<strong>通过XML配置Spring，集成各种框架的实质，就是Bean装配的。</strong>每一个框架都是由N多个Bean构成的，如果需要使用它，就必须根据框架的要求装配相应的Bean。装配成功的Bean由Spring IoC容器统一管理，就能够正常进行工作。</p>
+<h2 id="Bean的装配"><a href="#Bean的装配" class="headerlink" title="Bean的装配"></a>Bean的装配</h2><p>具体Bean的装配方式，发展到现在也已经有很多种了，从过去的XML到Java Config，再到现在Spring Boot的Auto Configuration，是一种不断简化，不断清晰的过程。</p>
+<p>Bean装配一般分为三步：注册、扫描、注入。</p>
+<h3 id="由XML到Java-Config"><a href="#由XML到Java-Config" class="headerlink" title="由XML到Java Config"></a>由XML到Java Config</h3><p>XML配置Bean早已成为明日黄花了，目前<strong>更常见的是使用Java Config和注解来进行Bean的装配</strong>。当然，偶尔也能看到它的身影，例如用于ssm框架的集成的spring-*.xml。</p>
+<p>Java Config的优势如下：</p>
+<ol>
+<li>Java是类型安全的，如果装配过程中如果出现问题，编译器会直接反馈。</li>
+<li>XML配置文件会随着配置的增加而越来越大，不易维护管理。</li>
+<li>Java Config更易于重构和搜索Bean。</li>
+</ol>
+<p>因此下面主要讲都是基于Java的配置方法。基本流程如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 注册</span></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BeanConfiguration</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> AtomicInteger <span class="title">count</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> AtomicInteger();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//或者 </span></span><br><span class="line"><span class="meta">@Componment</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Foo</span></span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 扫描</span></span><br><span class="line"><span class="meta">@ComponentScan</span>(basePackages=&#123;&#125;)</span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BeanConfiguration</span> </span>&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注入</span></span><br><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> AtomicInteger c;</span><br></pre></td></tr></table></figure>
+
+<p>下面详细展开。</p>
+<p>Java Config注册Bean，主要分为两类，注册非源码的Bean和注册源码的Bean。</p>
+<h4 id="注册非源码的Bean"><a href="#注册非源码的Bean" class="headerlink" title="注册非源码的Bean"></a>注册非源码的Bean</h4><p>非源码的Bean，指的是我们无法去编辑的代码，主要是引入外部框架或依赖，或者使用Spring的一些Bean。这些Bean的配置一般采用Java文件的形式进行声明。</p>
+<p>新建一个使用<code>@Configuration</code>修饰的配置类，然后使用<code>@Bean</code>修饰需要创建Bean的方法，具体的可指定value和name值（两者等同）。示例如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BeanConfiguration</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Scope</span>(<span class="string">"prototype"</span>)</span><br><span class="line">    <span class="meta">@Bean</span>(value = <span class="string">"uploadThreadPool"</span>)</span><br><span class="line">    <span class="function"><span class="keyword">public</span> ExecutorService <span class="title">downloadThreadPool</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> Executors.newFixedThreadPool(<span class="number">10</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中需要注意的是：</p>
+<ol>
+<li>Bean默认是以单例的形式创建的，整个应用中，只创建一个实例。如果需要，每次注入都创建一个新的实例，可添加注解<code>@Scope(&quot;prototype&quot;)</code>。对于这个例子而言，默认创建的线程池是单例的，在应用的任何一个地方注入后使用，用到的都是同一个线程池（全局共享）；加上<code>@Scope(&quot;prototype&quot;)</code>后，在每一个Controller中分别注入，意味着，每一个Controller都拥有各自的线程池，各自的请求会分别提交到各自的线程池中。</li>
+<li>注入多个相同类型的Bean时，手动指定name或value值加以区分。或通过<code>@Primary</code>，标出首选的Bean。</li>
+</ol>
+<h4 id="注册源码的Bean"><a href="#注册源码的Bean" class="headerlink" title="注册源码的Bean"></a>注册源码的Bean</h4><p>源码的Bean，指的是我们自己写的代码，一般不会以@Bean的形式装配，而是使用另外一系列具有语义的注解。（@Component、@Controller、@Service、@Repository）添加这些注解后，该类就成为Spring管理的组件类了，列出的后三个注解用的几率最高，基本已经成为样板注解了，Controller类添加@Controller，Service层实现添加@Service。</p>
+<p>下面展示一个例子，通过Spring声明自己封装的类。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Scope</span>(<span class="string">"prototype"</span>)</span><br><span class="line"><span class="meta">@Component</span>(value = <span class="string">"uploadThread"</span>)</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">UploadTask</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> List&lt;ByteArrayInputStream&gt; files;</span><br><span class="line">    <span class="keyword">private</span> List&lt;String&gt; fileNameList;</span><br><span class="line">    <span class="keyword">private</span> PropertiesConfig prop = SpringUtil.getBean(PropertiesConfig<span class="class">.<span class="keyword">class</span>)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果直接传入MutiPartFile，文件会无法存入，因为对象传递后spring会将tmp文件缓存清楚</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">UploadThread</span><span class="params">(List&lt;ByteArrayInputStream&gt; files, List&lt;String&gt; fileNameList)</span>     </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.files = files;</span><br><span class="line">        <span class="keyword">this</span>.fileNameList = fileNameList;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; files.size(); ++i) &#123;</span><br><span class="line">            String fileName = fileNameList.get(i);</span><br><span class="line">            String filePath = FileUtils.generatePath(prop.getImageSavePath(),fileName);</span><br><span class="line">            FileUtils.save(<span class="keyword">new</span> File(filePath), files.get(i));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接着上面的线程池讲，这里我们实现了一个task，用来处理异步上传任务。在传统JUC中，我们一般会这么写代码：</p>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> ExecutorService uploadThreadPool = <span class="module-access"><span class="module"><span class="identifier">Executors</span>.</span></span><span class="keyword">new</span><span class="constructor">FixedThreadPool(10)</span>;</span><br><span class="line">uploadThreadPool.submit(<span class="keyword">new</span> <span class="constructor">UploadTask(<span class="params">fileCopyList</span>, <span class="params">fileNameList</span>)</span>);</span><br></pre></td></tr></table></figure>
+
+<p>在Spring中，我觉得就应该把代码写的更Spring化一些，因此添加@Component使之成为Spring Bean，并且线程非单例，添加@Scope注解。重构后的代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Resource</span>(name = <span class="string">"uploadThreadPool"</span>)</span><br><span class="line"><span class="keyword">private</span> ExecutorService uploadThreadPool;</span><br><span class="line"></span><br><span class="line"><span class="meta">@PostMapping</span>(<span class="string">"/upload"</span>)</span><br><span class="line"><span class="function"><span class="keyword">public</span> RestResult <span class="title">upload</span><span class="params">(HttpServletRequest request)</span> </span>&#123;</span><br><span class="line">    uploadThreadPool.submit((Runnable) SpringUtils.getBean(<span class="string">"uploadThread"</span>, fileCopyList, fileNameList));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Bean的注入在下节会仔细讲。其实这样写还有零一个原因，<strong>非Spring管理的Bean一般是无法直接注入Spring Bean的</strong>。如果我们需要在UploadTask中实现一些业务逻辑，可能需要注入一些Services，最好的做法就是讲UploadTask本身也注册成Spring Bean，那么在类中就能够使用@Autowired进行自动注入了。</p>
+<p>额外需要注意的是：<strong>由于线程安全的一些原因，线程类是无法直接使用@Autowired注入Bean的。</strong>一般会采用<code>SpringUtils.getBean()</code>手动注入。</p>
+<h3 id="自动扫描"><a href="#自动扫描" class="headerlink" title="自动扫描"></a>自动扫描</h3><p>在配置类上添加<code>@ComponentScan</code>注解。该注解默认会扫描该类所在的包下所有的配置类，特殊的包可以配置<code>basePackages</code>属性。Spring扫描到所有Bean，待注入就可以使用了。</p>
+<h3 id="Bean的注入"><a href="#Bean的注入" class="headerlink" title="Bean的注入"></a>Bean的注入</h3><p>对于一些不直接使用的Bean，注册到Spring IoC容器后，我们是不需要手动去注入的。例如前面提到Mybatis的三个Bean。我们只需要根据文档进行使用，创建Mapper接口，并使用@Mapper修饰，在调用具体的查询方法时，Mybatis内部会进行Bean的注入，Open一个Session进行数据库的操作。</p>
+<p>对于我们需要使用到的Bean，就需要注入到变量中进行使用。常用Bean注入的方式有两种。</p>
+<ol>
+<li><strong>注解注入（@Autowired和@Resource）。</strong></li>
+</ol>
+<p><code>@Autowired</code>是Bean注入最常用的注解，默认是通过<strong>byType</strong>的方式注入的。也就是说如果包含多个相同类型的Bean，是无法直接通过@Autowired注入的。这个时候需要通过@Qualifier限定注入的Bean。或者使用@Resource。<code>@Resource</code>是通过<strong>byName</strong>的方式注入，直接在注解上标明Bean的name即可。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Foo</span></span>&#123;</span><br><span class="line">    <span class="comment">// 正常字段注入</span></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> AtomicInteger c;</span><br><span class="line">  </span><br><span class="line">    <span class="comment">// 正常构造器注入</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> AtomicInteger c;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Foo</span><span class="params">(AtomicInteger c)</span></span>&#123;<span class="keyword">this</span>.c = c;&#125;</span><br><span class="line">  </span><br><span class="line">    <span class="comment">// 歧义加上@Qualifier</span></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="meta">@Qualifier</span>(<span class="string">"count"</span>)</span><br><span class="line">    <span class="keyword">private</span> AtomicInteger c;  </span><br><span class="line">  </span><br><span class="line">    <span class="comment">// 歧义直接使用@Resource（与前一种等同）</span></span><br><span class="line">    <span class="meta">@Resource</span>(<span class="string">"count"</span>)</span><br><span class="line">    <span class="keyword">private</span> AtomicInteger c;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li><strong>调用Application Context的getBean方法。</strong></li>
+</ol>
+<p>推荐使用注解注入，但是在默写特殊情况下，需要使用getBean()方法来注入Bean。例如之前讲到的多线程环境。具体实现可见附录，实现ApplicationContextAware，可以封装成一个工具类。</p>
+<h3 id="SSM集成的Java版"><a href="#SSM集成的Java版" class="headerlink" title="SSM集成的Java版"></a>SSM集成的Java版</h3><p>由于Java Config的优势，框架集成工作很多选择不用XML配置了。例如之前在xml中配置Spring MVC的ViewResolver，在Java中就可以这样去注入：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@EnableWebMvc</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">WebConfig</span> <span class="keyword">extends</span> <span class="title">WebMvcConfigurerAdapter</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ViewResolver <span class="title">viewResolver</span><span class="params">()</span></span>&#123;</span><br><span class="line">        InternalResourceViewResolver resolver = <span class="keyword">new</span> InternalResourceViewResolver();</span><br><span class="line">        resolver.setPrefix(<span class="string">"/WEB-INF/view/"</span>);</span><br><span class="line">        resolver.setSuffix(<span class="string">".jsp"</span>);</span><br><span class="line">        <span class="keyword">return</span> resolver;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>有兴趣的，可以自己去使用Java Config集成一下，其实需要配置的东西都是一致的，只是在Java中，有的是要注册对应的Bean，有的需要实现对应的接口罢了。由XML到Java，仅仅只是配置语言的改变，真正解放程序员，提高生产力是Spring Boot。基于约定大于配置的思路，通过Auto Configuration，大规模减少了一些缺省Bean的配置工作。</p>
+<h2 id="Spring-Boot-Magic"><a href="#Spring-Boot-Magic" class="headerlink" title="Spring Boot Magic"></a>Spring Boot Magic</h2><h3 id="Auto-Configuration"><a href="#Auto-Configuration" class="headerlink" title="Auto Configuration"></a>Auto Configuration</h3><p>接下来我们看一下，基于Spring Boot的SSM集成需要配置的内容。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">datasource:</span></span><br><span class="line">    <span class="attr">url:</span> <span class="string">jdbc:mysql://localhost:3306/test</span></span><br><span class="line">    <span class="attr">username:</span> <span class="string">root</span></span><br><span class="line">    <span class="attr">password:</span> <span class="string">fur@6289</span></span><br><span class="line"><span class="attr">mybatis:</span></span><br><span class="line">  <span class="attr">type-aliases-package:</span> <span class="string">com.fur.mybatis_web.mapper</span></span><br><span class="line">  <span class="attr">mapper-locations:</span> <span class="string">classpath:mapping/*.xml</span></span><br></pre></td></tr></table></figure>
+
+<p>用过Spring Boot的都知道，上面的是Spring Boot的配置文件<code>application.yml</code>。只需要在pom.xml添加对应依赖，在yml里配置必要的信息。（框架再智能也不可能知道我们的数据库信息吧:smile:）之前看到的CommonsMultipartResolver、SqlSessionFactoryBean等再也不需要手动去装配了。</p>
+<p>Spring Boot和传统SSM的不同之处在于：</p>
+<ol>
+<li>添加的maven依赖不同，由<code>mybatis</code>和<code>mybatis-spring</code>变成了<code>mybatis-spring-boot-starter</code></li>
+<li>多了@SpringBootApplication，少了@ComponentScan</li>
+</ol>
+<p>这里也不对Spring Boot Starter进行介绍了，只要知道这就是一个新的dependency，包含自动配置和其他需要的依赖就行了。在过去Spring中引入的依赖中，如果Boot实现了对应的starter，应该优先使用Starter。</p>
+<p>下面我们就跟一下源码，了解一下Spring Boot到底是如何实现Auto Configuration的。Take it easy，我们不会逐行去分析源码，只是梳理下大概的流程。</p>
+<p>顺着思路，首先看到的是@SpringBootApplication注解中的内容，显然这是一个复合注解，主要包含@SpringBootConfiguration、@EnableAutoConfiguration和@ComponentScan。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Target</span>(ElementType.TYPE)</span><br><span class="line"><span class="meta">@Retention</span>(RetentionPolicy.RUNTIME)</span><br><span class="line"><span class="meta">@Documented</span></span><br><span class="line"><span class="meta">@Inherited</span></span><br><span class="line"><span class="meta">@SpringBootConfiguration</span></span><br><span class="line"><span class="meta">@EnableAutoConfiguration</span></span><br><span class="line"><span class="meta">@ComponentScan</span>(excludeFilters = &#123; <span class="meta">@Filter</span>(type = FilterType.CUSTOM, classes = TypeExcludeFilter<span class="class">.<span class="keyword">class</span>),</span></span><br><span class="line"><span class="class">@<span class="title">Filter</span>(<span class="title">type</span> </span>= FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter<span class="class">.<span class="keyword">class</span>) &#125;)</span></span><br><span class="line"><span class="class"><span class="title">public</span> @<span class="title">interface</span> <span class="title">SpringBootApplication</span> </span>&#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>@SpringBootConfiguration，内部是一个@Configuration，跟之前一样，注解修饰的类是一个Spring配置类。</li>
+<li>@ComponentScan，也不陌生。集成在@SpringBootApplication注解中，创建项目时默认添加，我们无需手动开启Bean扫描了。</li>
+<li>@EnableAutoConfiguration，这个就是Auto Configuration的关键。简而言之，加上这个注解，Spring会自动扫描引入的依赖（classpath下的jar包）中需要Auto Configuration的项目，并且根据yml进行自动配置工作。</li>
+</ul>
+<p>再看@EnableAutoConfiguration，发现内部import一个<code>AutoConfigurationImportSelector</code>类，这个类基本上就是处理Auto Configuration工作的核心类了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// AutoConfigurationImportSelector.java</span></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Return the auto-configuration class names that should be considered. By default</span></span><br><span class="line"><span class="comment"> * this method will load candidates using &#123;<span class="doctag">@link</span> SpringFactoriesLoader&#125; with</span></span><br><span class="line"><span class="comment"> * &#123;<span class="doctag">@link</span> #getSpringFactoriesLoaderFactoryClass()&#125;.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> metadata the source metadata</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> attributes the &#123;<span class="doctag">@link</span> #getAttributes(AnnotationMetadata) annotation</span></span><br><span class="line"><span class="comment"> * attributes&#125;</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> a list of candidate configurations</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> List&lt;String&gt; <span class="title">getCandidateConfigurations</span><span class="params">(AnnotationMetadata metadata, AnnotationAttributes attributes)</span> </span>&#123;</span><br><span class="line">    List&lt;String&gt; configurations = SpringFactoriesLoader.loadFactoryNames(getSpringFactoriesLoaderFactoryClass(),getBeanClassLoader());</span><br><span class="line">    Assert.notEmpty(configurations, <span class="string">"No auto configuration classes found in META-INF/spring.factories. If you "</span></span><br><span class="line">            + <span class="string">"are using a custom packaging, make sure that file is correct."</span>);</span><br><span class="line">    <span class="keyword">return</span> configurations;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>看到上面的这个方法，<code>getCandidateConfigurations()</code>的作用就是获取需要自动配置的依赖信息，核心功能由SpringFactoriesLoader的<code>loadFactoryNames()</code>方法来完成。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// SpringFactoriesLoader.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">SpringFactoriesLoader</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String FACTORIES_RESOURCE_LOCATION = <span class="string">"META-INF/spring.factories"</span>;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Load the fully qualified class names of factory implementations of the</span></span><br><span class="line"><span class="comment">     * given type from &#123;<span class="doctag">@value</span> #FACTORIES_RESOURCE_LOCATION&#125;, using the given</span></span><br><span class="line"><span class="comment">     * class loader.</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> factoryClass the interface or abstract class representing the factory</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> classLoader the ClassLoader to use for loading resources; can be</span></span><br><span class="line"><span class="comment">     * &#123;<span class="doctag">@code</span> null&#125; to use the default</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> IllegalArgumentException if an error occurs while loading factory names</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@see</span> #loadFactories</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> List&lt;String&gt; <span class="title">loadFactoryNames</span><span class="params">(Class&lt;?&gt; factoryClass, @Nullable ClassLoader classLoader)</span> </span>&#123;</span><br><span class="line">        String factoryClassName = factoryClass.getName();</span><br><span class="line">        <span class="keyword">return</span> loadSpringFactories(classLoader).getOrDefault(factoryClassName, Collections.emptyList());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里简单说一下流程，有兴趣的可以看下这个类的源码。SpringFactoriesLoader会扫描classpath下的所有jar包，并加载META-INF/spring.factories下的内容。我们以mybatis-spring-boot-starter为例，里面有个依赖mybatis-spring-boot-autoconfigure，可以看到存在META-INF/spring.factories。</p>
+<p><img src="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/bean-definition-from-spring-to-springboot/1566182027899.png" alt=""></p>
+<p>内容如下：</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Auto Configure</span></span><br><span class="line"><span class="meta">org.springframework.boot.autoconfigure.EnableAutoConfiguration</span>=<span class="string">\org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration</span></span><br></pre></td></tr></table></figure>
+
+<p>接下来，会获取到key为<code>org.springframework.boot.autoconfigure.EnableAutoConfiguration</code>的值。也就是Mybatis具体的自动配置类。可以看到在包<code>org.mybatis.spring.boot.autoconfigure</code>下，有<code>MybatisAutoConfiguration</code>和<code>MybatisProperties</code>，前者是自动配置类，后者是用于配置的一些参数，对应在yml中的mybatis节点下的键值对。下面贴一些源码看看：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// MybatisAutoConfiguration.java</span></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@ConditionalOnClass</span>(&#123; SqlSessionFactory<span class="class">.<span class="keyword">class</span>, <span class="title">SqlSessionFactoryBean</span>.<span class="title">class</span> &#125;)</span></span><br><span class="line"><span class="class">@<span class="title">ConditionalOnSingleCandidate</span>(<span class="title">DataSource</span>.<span class="title">class</span>)</span></span><br><span class="line"><span class="class">@<span class="title">EnableConfigurationProperties</span>(<span class="title">MybatisProperties</span>.<span class="title">class</span>)</span></span><br><span class="line"><span class="class">@<span class="title">AutoConfigureAfter</span>(<span class="title">DataSourceAutoConfiguration</span>.<span class="title">class</span>)</span></span><br><span class="line"><span class="class"><span class="title">public</span> <span class="title">class</span> <span class="title">MybatisAutoConfiguration</span> <span class="keyword">implements</span> <span class="title">InitializingBean</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="meta">@ConditionalOnMissingBean</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> SqlSessionFactory <span class="title">sqlSessionFactory</span><span class="params">(DataSource dataSource)</span> <span class="keyword">throws</span> Exception     </span>&#123;</span><br><span class="line">        SqlSessionFactoryBean factory = <span class="keyword">new</span> SqlSessionFactoryBean();</span><br><span class="line">        factory.setDataSource(dataSource);</span><br><span class="line">        <span class="comment">// 省略</span></span><br><span class="line">        <span class="keyword">return</span> factory.getObject();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里就看到了熟悉的SqlSessionFactory，之前我们需要手动注入，现在通过<code>@ConditionalOnMissingBean</code>，当Spring容器中不存在这个Bean时，就会为我们自动装配。</p>
+<p>下面的流程图就是简单描述了整个自动配置的流程。</p>
+<p><img src="https://blog-20190524.oss-cn-hangzhou.aliyuncs.com/images/bean-definition-from-spring-to-springboot/auto%20config.png" alt=""></p>
+<h3 id="Syntactic-sugar"><a href="#Syntactic-sugar" class="headerlink" title="Syntactic sugar"></a>Syntactic sugar</h3><p>其实就是复合注解啦，除了约定大于配置的自动装配外，Spring Boot通过一个大的复合注解@SpringBootApplication，把@ComponentScan和@SpringBootConfiguration也包在里面，使得启动类直接就可以作为配置类使用，并且减少了Bean扫描这一步。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文不算是一篇完整的Spring IoC教程，只是梳理了一下从Spring 到Spring Boot一路走来，在Bean装配上的用法和改变。可以看到这是一个不断简化，不断进步的过程，但是核心依然不变，因此即使当下转到Spring Boot 进行开发，在遇到一些复杂的业务上，任然需要用到Spring IoC相关的技术点，例如控制Bean的作用域，条件化Bean等等。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ul>
+<li><a href="https://www.jianshu.com/p/346cac67bfcc" target="_blank" rel="noopener">第5章 Spring Boot自动配置原理</a></li>
+<li><a href="http://www.ityouknow.com/springboot/2019/06/03/spring-boot-hot.html" target="_blank" rel="noopener">Spring Boot 为什么这么火？</a></li>
+<li><a href="https://www.manning.com/books/spring-in-action-fourth-edition" target="_blank" rel="noopener">《Spring 实战》</a></li>
+</ul>
+<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><h3 id="SpringUtils-java"><a href="#SpringUtils-java" class="headerlink" title="SpringUtils.java"></a>SpringUtils.java</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SpringUtils</span> <span class="keyword">implements</span> <span class="title">ApplicationContextAware</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> ApplicationContext applicationContext;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setApplicationContext</span><span class="params">(ApplicationContext applicationContext)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (SpringUtil.applicationContext == <span class="keyword">null</span>) &#123;</span><br><span class="line">            SpringUtil.applicationContext = applicationContext;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> ApplicationContext <span class="title">getApplicationContext</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> applicationContext;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Object <span class="title">getBean</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> getApplicationContext().getBean(name);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">T <span class="title">getBean</span><span class="params">(Class&lt;T&gt; clazz)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> getApplicationContext().getBean(clazz);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">T <span class="title">getBean</span><span class="params">(String name, Class&lt;T&gt; clazz)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> getApplicationContext().getBean(name, clazz);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">T <span class="title">getBean</span><span class="params">(String name, Object... args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (T) getApplicationContext().getBean(name, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="非Spring-Bean中获取Spring-Bean的方法"><a href="#非Spring-Bean中获取Spring-Bean的方法" class="headerlink" title="非Spring Bean中获取Spring Bean的方法"></a>非Spring Bean中获取Spring Bean的方法</h3><p>在非Spring Bean中获取Spring Bean，需要改造SpringUtils.java，去掉@Component，并且不需要实现接口了，手动注入Spring Context。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SpringUtils</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> ApplicationContext applicationContext;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">setApplicationContext</span><span class="params">(ApplicationContext applicationContext)</span> <span class="keyword">throws</span> BeansException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (SpringUtil.applicationContext == <span class="keyword">null</span>) &#123;</span><br><span class="line">            SpringUtil.applicationContext = applicationContext;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 余下代码如上</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SkeletonApplication</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        ApplicationContext context = SpringApplication.run(SkeletonApplication<span class="class">.<span class="keyword">class</span>, <span class="title">args</span>)</span>;</span><br><span class="line">        SpringUtils.setApplicationContext(context);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="Fururur 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Fururur
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://furur.xyz/2019/08/21/bean-definition-from-spring-to-springboot.html" title="Bean装配，从Spring到Spring Boot">https://furur.xyz/2019/08/21/bean-definition-from-spring-to-springboot.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Spring-Boot/" rel="tag"># Spring Boot</a>
+              <a href="/tags/Spring/" rel="tag"># Spring</a>
+              <a href="/tags/IoC/" rel="tag"># IoC</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/08/20/hexo-next-add-utterances-comments-system.html" rel="prev" title="Hexo Next 集成 utterances 评论系统">
+      <i class="fa fa-chevron-left"></i> Hexo Next 集成 utterances 评论系统
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/08/26/cd-guys.html" rel="next" title="Cantonpop & CD guys">
+      Cantonpop & CD guys <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+  
+    <div class="comments" id="comments">
+        
+<script src="https://utteranc.es/client.js"
+        repo="maoqyhz/blog-comments"
+        issue-term="pathname"
+        label="Comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+    </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#从SSM的集成谈到Bean的装配"><span class="nav-text">从SSM的集成谈到Bean的装配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Bean的装配"><span class="nav-text">Bean的装配</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#由XML到Java-Config"><span class="nav-text">由XML到Java Config</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#注册非源码的Bean"><span class="nav-text">注册非源码的Bean</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#注册源码的Bean"><span class="nav-text">注册源码的Bean</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#自动扫描"><span class="nav-text">自动扫描</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Bean的注入"><span class="nav-text">Bean的注入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SSM集成的Java版"><span class="nav-text">SSM集成的Java版</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Spring-Boot-Magic"><span class="nav-text">Spring Boot Magic</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Auto-Configuration"><span class="nav-text">Auto Configuration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Syntactic-sugar"><span class="nav-text">Syntactic sugar</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-text">参考文献</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#附录"><span class="nav-text">附录</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SpringUtils-java"><span class="nav-text">SpringUtils.java</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#非Spring-Bean中获取Spring-Bean的方法"><span class="nav-text">非Spring Bean中获取Spring Bean的方法</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Fururur"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Fururur</p>
+  <div class="site-description" itemprop="description">原来你也在这里</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/maoqyhz" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;maoqyhz" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/3160001350" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;3160001350" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.instagram.com/_fururur" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;_fururur" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://www.cnblogs.com/Sinte-Beuve" title="博客园 → http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank"><i class="fa fa-fw fa-wordpress"></i>博客园</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://www.cnblogs.com/Sinte-Beuve" title="http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank">我的博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://fucknmb.com/" title="http:&#x2F;&#x2F;fucknmb.com" rel="noopener" target="_blank">区长</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://draveness.me/" title="https:&#x2F;&#x2F;draveness.me&#x2F;" rel="noopener" target="_blank">面向信仰编程</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://blog.didispace.com/spring-boot-learning-1x/" title="http:&#x2F;&#x2F;blog.didispace.com&#x2F;spring-boot-learning-1x&#x2F;" rel="noopener" target="_blank">程序猿DD</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnkirito.moe/" title="https:&#x2F;&#x2F;www.cnkirito.moe&#x2F;" rel="noopener" target="_blank">徐靖峰|个人博客</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://imququ.com/post/series.html" title="https:&#x2F;&#x2F;imququ.com&#x2F;post&#x2F;series.html" rel="noopener" target="_blank">Jerry Qu的小站</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://spring.hhui.top/" title="http:&#x2F;&#x2F;spring.hhui.top&#x2F;" rel="noopener" target="_blank">一灰灰Blog</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Fururur</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

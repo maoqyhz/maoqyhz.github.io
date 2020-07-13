@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/fur.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic|Lobster Two:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"furur.xyz","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.json"};
+  </script>
+
+  <meta name="description" content="最近在学习本地缓存发现，在 Spring 技术栈的开发中，既可以使用 Spring Cache 的注解形式操作缓存，也可用各种缓存方案的原生 API。那么是否 Spring 官方提供的就是最合适的方案呢？那么本文将通过一个案例来为你揭晓。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一个缓存使用的思考：Spring Cache VS Caffeine 原生 API">
+<meta property="og:url" content="https://furur.xyz/2019/12/09/case-study-springcache-vs-api.html">
+<meta property="og:site_name" content="Fururur.">
+<meta property="og:description" content="最近在学习本地缓存发现，在 Spring 技术栈的开发中，既可以使用 Spring Cache 的注解形式操作缓存，也可用各种缓存方案的原生 API。那么是否 Spring 官方提供的就是最合适的方案呢？那么本文将通过一个案例来为你揭晓。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-12-09T13:54:38.000Z">
+<meta property="article:modified_time" content="2020-07-13T08:27:07.491Z">
+<meta property="article:author" content="Fururur">
+<meta property="article:tag" content="Spring Cache">
+<meta property="article:tag" content="Caffeine">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://furur.xyz/2019/12/09/case-study-springcache-vs-api.html">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>一个缓存使用的思考：Spring Cache VS Caffeine 原生 API | Fururur.</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?7889dcbf75b5eb88d87b678f31d5e900";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Fururur.</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/maoqyhz" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://furur.xyz/2019/12/09/case-study-springcache-vs-api.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Fururur">
+      <meta itemprop="description" content="原来你也在这里">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Fururur.">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          一个缓存使用的思考：Spring Cache VS Caffeine 原生 API
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-12-09 21:54:38" itemprop="dateCreated datePublished" datetime="2019-12-09T21:54:38+08:00">2019-12-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-13 16:27:07" itemprop="dateModified" datetime="2020-07-13T16:27:07+08:00">2020-07-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>最近在学习本地缓存发现，在 Spring 技术栈的开发中，既可以使用 Spring Cache 的注解形式操作缓存，也可用各种缓存方案的原生 API。那么是否 Spring 官方提供的就是最合适的方案呢？那么本文将通过一个案例来为你揭晓。</p>
+<a id="more"></a>
+
+<h2 id="Spring-Cache"><a href="#Spring-Cache" class="headerlink" title="Spring Cache"></a>Spring Cache</h2><blockquote>
+<p> Since version 3.1, the Spring Framework provides support for transparently adding caching to an existing Spring application. The caching abstraction allows consistent use of various caching solutions with minimal impact on the code.</p>
+</blockquote>
+<p>Spring Cache 和 slf4j、jdbc 类似，是由 Spring Framwork 提供的一个缓存抽象层，可以接入各种缓存解决方案来进行使用，通过 Spring Cache 的集成，我们只需要通过一组注解来操作缓存就可以了。目前支持的有 <a href="https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-caching-provider-generic" target="_blank" rel="noopener">Generic</a>、<a href="https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-caching-provider-jcache" target="_blank" rel="noopener">JCache (JSR-107)</a> 、<a href="https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-caching-provider-ehcache2" target="_blank" rel="noopener">EhCache 2.x</a>、<a href="https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-caching-provider-hazelcast" target="_blank" rel="noopener">Hazelcast</a>、<a href="https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-caching-provider-infinispan" target="_blank" rel="noopener">Infinispan</a>、<a href="https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-caching-provider-couchbase" target="_blank" rel="noopener">Couchbase</a>、<a href="https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-caching-provider-redis" target="_blank" rel="noopener">Redis</a>、<a href="https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-caching-provider-caffeine" target="_blank" rel="noopener">Caffeine</a>、<a href="https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-caching-provider-simple" target="_blank" rel="noopener">Simple</a>，几乎包含了主流的本地缓存方案。</p>
+<p>其主要的原理就是向 Spring Context 中注入 Cache 和 CacheManager 这两个 bean，再通过 Spring Boot 的自动装配技术，会根据项目中的配置文件自动注入合适的 Cache 和 CacheManager 实现。</p>
+<h2 id="本地缓存方案"><a href="#本地缓存方案" class="headerlink" title="本地缓存方案"></a>本地缓存方案</h2><p>Java 技术栈中成熟的本地缓存方案已经有很多了，有大而全的 ehcache，也有后起之秀 Google Guava Cache。下面是常用的三大本地缓存方案的对比，引用自博客 <a href="https://juejin.im/post/5b849878e51d4538c77a974a" target="_blank" rel="noopener">如何优雅的设计和使用缓存？</a></p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>Ehcache</th>
+<th>Guava Cache</th>
+<th>Caffeine</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>读写性能</td>
+<td>好</td>
+<td>好，需要做淘汰操作</td>
+<td>很好</td>
+</tr>
+<tr>
+<td>淘汰算法</td>
+<td>支持多种淘汰算法, LRU,LFU,FIFO</td>
+<td>LRU，一般</td>
+<td>W-TinyLFU, 很好</td>
+</tr>
+<tr>
+<td>功能丰富程度</td>
+<td>功能很丰富</td>
+<td>功能很丰富，支持刷新和虚引用等</td>
+<td>功能和 Guava Cache 类似</td>
+</tr>
+<tr>
+<td>工具大小</td>
+<td>很大，最新版本 1.4MB</td>
+<td>是 Guava 工具类中的一个小部分，较小</td>
+<td>一般，最新版本 644KB</td>
+</tr>
+<tr>
+<td>是否持久化</td>
+<td>是</td>
+<td>否</td>
+<td>否</td>
+</tr>
+<tr>
+<td>是否支持集群</td>
+<td>是</td>
+<td>否</td>
+<td>否</td>
+</tr>
+</tbody></table>
+<p>目前比较推荐的是 Caffeine，淘汰算法比较先进，并且得到 Spring Cache 的支持（新版的 Spring Cache 不再支持 Guava Cache）。下文的代码也是使用 Caffeine 的原生 API 的。</p>
+<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><p>使用过 Spring Cache 的人应该会发现，通过几个注解就能够轻松实现缓存的 CRUD 操作，并且替换其他的缓存方案不需要对代码进行改动吗，同时也不需要写例如下文的样板代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 缓存命中</span></span><br><span class="line">    <span class="keyword">if</span>(cache.getIfPresent(key) != <span class="keyword">null</span>)&#123;</span><br><span class="line">        <span class="comment">// todo</span></span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        <span class="comment">// 缓存未命中，IO 获取数据，结果存入缓存</span></span><br><span class="line">        Object value = repo.getFromDB(key);</span><br><span class="line">        cache.put(key,value);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>那学到这里，我就产生了疑惑，既然 Spring 出了缓存的注解化开发，并且大量的博客也都在往 Spring Cache 上引，那还是否需要用原生 API 呢？毕竟在 Spring Data JPA 出现后，我们的确很少关注后端 ORM 框架，也不再直接使用 Hibernate 了。</p>
+<p>当我实现了项目中的一个需求，这个问题好像就豁然开朗了。</p>
+<p>其实需求很简单，原本在本地 HashMap 中维护的一个映射表，由于后期需要频繁改动而放到了数据库中。但由于数据量并不大且不配置映射表时，数据保持不变，因此既然在学习缓存，就想把它加进去。那么现在需要做的就是：</p>
+<ol>
+<li>一个读取映射表全表的方法 <code>aliasMap()</code>。并缓存数据到 Caffeine。</li>
+<li>一个支持映射记录 CRUD 操作的页面，且修改映射表时，更新缓存。</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Cacheable</span>(value = <span class="string">"default"</span>, key = <span class="string">"#root.methodName"</span>)</span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Map&lt;String, String&gt; <span class="title">aliasMap</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> getMapFromDB();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由于 Spring Cache 的注解一般是添加在类或者方法上的，换而言之，缓存的是方法返回的对象。显然，通过某个方法来触发另一个缓存中的对象的更新是行不通的。这样是否意味着 Spring Cache 无法实现了呢？仔细去看一下 Spring Cache 的原理，其实还是可行的。</p>
+<p>Spring Cache 会向 Spring Context 中注入 Cache 和 CacheManager 这两个 bean，再通过 Spring Boot 的自动装配技术，根据项目中的配置文件自动注入合适的 Cache 和 CacheManager 实现。再看到 CaffeineCacheManager 的源码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CaffeineCacheManager</span> <span class="keyword">implements</span> <span class="title">CacheManager</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ConcurrentMap&lt;String, Cache&gt; cacheMap = <span class="keyword">new</span> ConcurrentHashMap(<span class="number">16</span>);</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> dynamic = <span class="keyword">true</span>;</span><br><span class="line">    <span class="keyword">private</span> Caffeine&lt;Object, Object&gt; cacheBuilder = Caffeine.newBuilder();</span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="keyword">private</span> CacheLoader&lt;Object, Object&gt; cacheLoader;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> allowNullValues = <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>显然，缓存是存在 cacheMap 这样一个 ConcurrentHashMap 中，那只要我们能够手动去获取到这个 bean 的实例去操作它，那么这个需求就可以实现了，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Autowired</span></span><br><span class="line"><span class="keyword">private</span> CacheManager cacheManager;</span><br><span class="line"><span class="meta">@Cacheable</span>(value = <span class="string">"default"</span>, key = <span class="string">"#root.methodName"</span>)</span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Map&lt;String, String&gt; <span class="title">aliasMap</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> getMapFromDB();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> Map&lt;String, String&gt; <span class="title">getMapFromDB</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Map&lt;String, String&gt; map = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">    List&lt;PartAlias&gt; list = repository.findAll();</span><br><span class="line">    list.forEach(x -&gt; map.put(x.getAlias(), x.getName()));</span><br><span class="line">    <span class="keyword">return</span> map;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> PartAlias <span class="title">saveOrUpdateWithCache</span><span class="params">(PartAlias obj)</span> </span>&#123;</span><br><span class="line">    PartAlias partAlias = repository.saveAndFlush(obj);</span><br><span class="line">    Cache cache = cacheManager.getCache(<span class="string">"default"</span>);</span><br><span class="line">    cache.clear();</span><br><span class="line">    cache.put(<span class="string">"aliasMap"</span>, getMapFromDB());</span><br><span class="line">    <span class="keyword">return</span> partAlias;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>经过测试，上面的代码是可行的。显然，遇到一些稍微复杂的需求，仅仅依靠 Spring Cache 的注解是远远不够的，我们需要自己去操作 cache 对象。如果使用原生 API 就非常简单了，能应对不同的需求。</p>
+<h3 id="What’s-More"><a href="#What’s-More" class="headerlink" title="What’s More"></a>What’s More</h3><p>上面的需求，Spring Cache 尚且还是能够处理的，但是如果要实现数据的自动加载和刷新呢？现在 Spring Cache 并不能够很好的支持。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cache:</span></span><br><span class="line">    <span class="attr">type:</span> <span class="string">caffeine</span></span><br><span class="line">    <span class="attr">caffeine:</span></span><br><span class="line">      <span class="attr">spec:</span> <span class="string">maximumSize=1024</span></span><br><span class="line">    <span class="attr">cache-names:</span> <span class="string">cache1,cache2</span></span><br></pre></td></tr></table></figure>
+
+<p>上面的代码是用来配置 cache 的，结合上文 CaffeineCacheManager 的源码，我们可以知道，Spring Cache 的配置是全局的，也就是说例如最大条数、过期时间等参数是为全体缓存进行设置的，无法单独为某个缓存设置。而在 Caffeine 中用于数据加载和刷新的 <code>CacheLoader</code> 也是 <code>CaffeineCacheManager</code> 这个 bean 共有的，因此也就失去存在的意义，毕竟每个缓存的加载和数据刷新的方式是不可能相同的。</p>
+<p>因此，在遇到复杂场景下， 还是得上原生 API 的，Spring Cache 就显得心有余而力不足了。笔者也写个一个工具类，可以全局使用缓存。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CaffeineCacheManager</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ConcurrentMap&lt;String, Cache&gt; cacheMap = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;(<span class="number">16</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 缓存创建</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> cacheName</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> cache</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">createCache</span><span class="params">(String cacheName, Cache cache)</span> </span>&#123;</span><br><span class="line">        cacheMap.put(cacheName, cache);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 缓存获取</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> name</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> Cache <span class="title">getCache</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">        Cache cache = <span class="keyword">this</span>.cacheMap.get(name);</span><br><span class="line">        <span class="keyword">if</span> (cache == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"No this cache."</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> cache;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> CaffeineCacheManager manager;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        manager.createCache(<span class="string">"default"</span>, Caffeine.newBuilder()</span><br><span class="line">                .maximumSize(<span class="number">1024</span>)</span><br><span class="line">                .build());</span><br><span class="line">        Cache&lt;String, Object&gt; cache = manager.getCache(<span class="string">"default"</span>);</span><br><span class="line">        <span class="comment">// TODO</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当然，再来提一提，既然是 Spring 的套路，总是会给开发者留一条后路的，如果愿意折腾的，可以阅读 CacheManager 的代码，再根据自己需求重新实现，从而管理自己的 cache 实例。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文不是一篇介绍 Spring Cache 和 Caffeine 用法的文章（有需要可以阅读参考文献），而是在探讨 Spring Cache 和 Caffeine 的原生 API 的使用场景。显然，Spring 全家桶有时未必是最优的解决方案（有能力重写的另当别论了）！所以也希望网上有更多的博客可以 focus on 框架本身的使用，而不是千篇一律的各种集成到 Spring xxx。</p>
+<h2 id="附录"><a href="#附录" class="headerlink" title="附录"></a>附录</h2><h3 id="yaml-配置"><a href="#yaml-配置" class="headerlink" title="yaml 配置"></a>yaml 配置</h3><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">initialCapacity:</span> <span class="comment"># 初始的缓存空间大小</span></span><br><span class="line"><span class="attr">maximumSize:</span> <span class="comment"># 缓存的最大条数</span></span><br><span class="line"><span class="attr">maximumWeight:</span> <span class="comment"># 缓存的最大权重</span></span><br><span class="line"><span class="attr">expireAfterAccess:</span> <span class="comment"># 最后一次写入或访问后经过固定时间过期</span></span><br><span class="line"><span class="attr">expireAfterWrite:</span> <span class="comment"># 最后一次写入后经过固定时间过期</span></span><br><span class="line"><span class="attr">refreshAfterWrite:</span> <span class="comment"># 创建缓存或者最近一次更新缓存后经过固定的时间间隔，刷新缓存</span></span><br><span class="line"><span class="attr">weakKeys:</span> <span class="comment"># 打开 key 的弱引用</span></span><br><span class="line"><span class="attr">weakValues:</span>  <span class="comment"># 打开 value 的弱引用</span></span><br><span class="line"><span class="attr">softValues:</span> <span class="comment"># 打开 value 的软引用</span></span><br><span class="line"><span class="attr">recordStats:</span> <span class="comment"># 开发统计功能</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="原理篇"><a href="#原理篇" class="headerlink" title="原理篇"></a>原理篇</h3><h4 id="合理使用缓存"><a href="#合理使用缓存" class="headerlink" title="合理使用缓存"></a>合理使用缓存</h4><p>缓存的目的主要是为了降低主主数据库的压力，服务可以直接从缓存中获取数据，从而提高响应速度，让原本有限的资源可以服务更多的用户。</p>
+<p>从工程的角度来说，缓存的引入并不是盲目的，如果主数据库压力不大的情况，并不需要添加缓存。多添加一个数据中间件显然也会增加维护的成本，而且在实际使用过程中还会存在一些，例如缓存击穿、缓存雪崩等问题。</p>
+<h4 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h4><ul>
+<li>命中率。 返回正确结果数 / 请求缓存次数， 命中率越高，表明缓存的使用率越高。</li>
+<li>最大元素。缓存中可以存放元素的最大数目， 一旦超过，会通过合适的策略进行清空操作。</li>
+<li>清空策略：FIFO、LFU、LRU</li>
+</ul>
+<h4 id="缓存类型"><a href="#缓存类型" class="headerlink" title="缓存类型"></a>缓存类型</h4><p>缓存根据存储的方式可以分成本地缓存和分布式缓存。</p>
+<ul>
+<li>本地缓存：本地缓存一般指的是缓存在应用进程内部的缓存。以 Java 技术栈为例，可是自己实现一个 HashMap 作为数据缓存，也可以直接使用现成的缓存方案，例如 ehcache、caffeine 等。</li>
+<li>分布式缓存：缓存和应用环境分离，会单独存放在自己的服务器或集群里，且多个应用可直接的共享缓存。 常见的缓存方案有 MemCache 和 Redis 等。</li>
+</ul>
+<p>这一节主要是让大家对缓存有一个基本的认识，缓存不是一种具体的技术，而是一种通用的技术方案，如何选择合适的缓存方案集成到自己的项目中去并且如何解决引入缓存后产生的一些经典问题，不是本文讨论的重点。有关于缓存的详细介绍和选型可以参考：</p>
+<ul>
+<li><a href="https://cloud.tencent.com/developer/article/1058203" target="_blank" rel="noopener">美团技术团队——缓存那些事</a></li>
+<li><a href="https://juejin.im/post/5b849878e51d4538c77a974a" target="_blank" rel="noopener">如何优雅的设计和使用缓存？</a></li>
+</ul>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ul>
+<li><a href="https://docs.spring.io/spring-framework/docs/current/spring-framework-reference/integration.html#cache" target="_blank" rel="noopener">spring-framework-cache</a></li>
+<li><a href="https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-caching" target="_blank" rel="noopener">spring-boot-cache</a></li>
+<li><a href="https://github.com/ben-manes/caffeine/wiki" target="_blank" rel="noopener">caffeine/wiki</a></li>
+<li><a href="https://juejin.im/post/5b849878e51d4538c77a974a" target="_blank" rel="noopener">如何优雅的设计和使用缓存？</a></li>
+<li><a href="https://juejin.im/post/5b7593496fb9a009b62904fa" target="_blank" rel="noopener">你应该知道的缓存进化史</a></li>
+<li><a href="https://www.jianshu.com/p/9a80c662dac4" target="_blank" rel="noopener">Caffeine 缓存</a></li>
+<li><a href="https://www.jianshu.com/p/c72fb0c787fc" target="_blank" rel="noopener">Spring Boot 缓存实战 Caffeine</a></li>
+<li><a href="https://juejin.im/post/5da52d55f265da5b5b6c6d3" target="_blank" rel="noopener">Spring Boot 2.X(七)：Spring Cache 使用</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.jpg" alt="Fururur 微信支付">
+        <p>微信支付</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Fururur
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://furur.xyz/2019/12/09/case-study-springcache-vs-api.html" title="一个缓存使用的思考：Spring Cache VS Caffeine 原生 API">https://furur.xyz/2019/12/09/case-study-springcache-vs-api.html</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Spring-Cache/" rel="tag"># Spring Cache</a>
+              <a href="/tags/Caffeine/" rel="tag"># Caffeine</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/11/06/do-you-like-this-hk-opera.html" rel="prev" title="平淡中求创新，这样的港剧你喜欢吗">
+      <i class="fa fa-chevron-left"></i> 平淡中求创新，这样的港剧你喜欢吗
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2019/12/24/bug-review-importance-of-interface-async-return.html" rel="next" title="Bug复盘：接口异步返回的重要性">
+      Bug复盘：接口异步返回的重要性 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+  
+    <div class="comments" id="comments">
+        
+<script src="https://utteranc.es/client.js"
+        repo="maoqyhz/blog-comments"
+        issue-term="pathname"
+        label="Comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+
+
+    </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Spring-Cache"><span class="nav-text">Spring Cache</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#本地缓存方案"><span class="nav-text">本地缓存方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#案例"><span class="nav-text">案例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#What’s-More"><span class="nav-text">What’s More</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#附录"><span class="nav-text">附录</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#yaml-配置"><span class="nav-text">yaml 配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#原理篇"><span class="nav-text">原理篇</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#合理使用缓存"><span class="nav-text">合理使用缓存</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#基本概念"><span class="nav-text">基本概念</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#缓存类型"><span class="nav-text">缓存类型</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-text">参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Fururur"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Fururur</p>
+  <div class="site-description" itemprop="description">原来你也在这里</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">29</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/maoqyhz" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;maoqyhz" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://weibo.com/u/3160001350" title="Weibo → https:&#x2F;&#x2F;weibo.com&#x2F;u&#x2F;3160001350" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>Weibo</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.instagram.com/_fururur" title="Instagram → https:&#x2F;&#x2F;www.instagram.com&#x2F;_fururur" rel="noopener" target="_blank"><i class="fa fa-fw fa-instagram"></i>Instagram</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="http://www.cnblogs.com/Sinte-Beuve" title="博客园 → http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank"><i class="fa fa-fw fa-wordpress"></i>博客园</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="http://www.cnblogs.com/Sinte-Beuve" title="http:&#x2F;&#x2F;www.cnblogs.com&#x2F;Sinte-Beuve" rel="noopener" target="_blank">我的博客园</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://fucknmb.com/" title="http:&#x2F;&#x2F;fucknmb.com" rel="noopener" target="_blank">区长</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://draveness.me/" title="https:&#x2F;&#x2F;draveness.me&#x2F;" rel="noopener" target="_blank">面向信仰编程</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://blog.didispace.com/spring-boot-learning-1x/" title="http:&#x2F;&#x2F;blog.didispace.com&#x2F;spring-boot-learning-1x&#x2F;" rel="noopener" target="_blank">程序猿DD</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.cnkirito.moe/" title="https:&#x2F;&#x2F;www.cnkirito.moe&#x2F;" rel="noopener" target="_blank">徐靖峰|个人博客</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://imququ.com/post/series.html" title="https:&#x2F;&#x2F;imququ.com&#x2F;post&#x2F;series.html" rel="noopener" target="_blank">Jerry Qu的小站</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://spring.hhui.top/" title="http:&#x2F;&#x2F;spring.hhui.top&#x2F;" rel="noopener" target="_blank">一灰灰Blog</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Fururur</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
